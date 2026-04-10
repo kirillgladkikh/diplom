@@ -1,6 +1,20 @@
 from .parser import Parser
 from urllib.parse import urljoin
 import time
+import logging
+
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('scraper.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 
 class Crawler:
     def __init__(self, base_url, delay=2):

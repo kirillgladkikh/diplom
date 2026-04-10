@@ -1,5 +1,19 @@
 from src.crawler import Crawler
 from src.exporter import CSVExporter
+import logging
+
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('scraper.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 
 # использованы АКУТАЛЬНЫЕ селекторы полей
 def main():
