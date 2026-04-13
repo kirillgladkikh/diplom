@@ -21,26 +21,50 @@ class Parser:
 
     @staticmethod
     def parse_product_list(soup):
-        """Парсинг списка товаров на странице каталога"""
-        products = []
-        cards = soup.select('a.product-card__link')
-        for card in cards:
-            product_url = 'https://goldapple.ru' + card['href']
-            name_elem = card.select_one('span.product-card__name')
-            price_elem = card.select_one('span.current-price')
-            rating_elem = card.select_one('div.rating__stars')
+        """Парсинг списка товаров на странице каталога — извлекаем URL товаров"""
+        products = []  # Инициализируем пустой список для хранения данных о товарах
+        cards = soup.select('a.product-card__link')  # Находим все ссылки с карточками товаров по CSS‑селектору
 
+        for card in cards:  # Перебираем каждую карточку товара в найденном списке
+            # Извлекаем URL товара
+            href = card.get('href')  # Получаем значение атрибута 'href' из тега <a>
+            if not href:  # Проверяем, существует ли атрибут href
+                continue  # Если href отсутствует, пропускаем текущую итерацию цикла — переходим к следующей карточке
+
+            # Формируем полный URL товара:
+            # Если ссылка относительная (начинается с '/'), добавляем базовый домен
+            # В противном случае используем ссылку как есть
+            product_url = 'https://goldapple.ru' + href if href.startswith('/') else href
+            # product_url = 'https://goldapple.ru' + card['href']
+
+            # Извлекаем название товара (если доступно)
+            name_elem = card.select_one('span.product-card__name')  # Ищем элемент с названием товара внутри карточки
+            # Если элемент найден, берём его текст и убираем лишние пробелы; иначе — ставим заглушку
             name = name_elem.text.strip() if name_elem else 'Не указано'
-            price = re.sub(r'\D', '', price_elem.text) if price_elem else '0'
-            rating = rating_elem['data-rating'] if rating_elem and rating_elem.get('data-rating') else '0'
 
+            # Извлекаем цену товара (если доступна)
+            price_elem = card.select_one('span.current-price')  # Ищем элемент с текущей ценой
+            # Если элемент найден, удаляем все нецифровые символы из текста (оставляем только цифры цены);
+            # иначе устанавливаем цену '0'
+            price = re.sub(r'\D', '', price_elem.text) if price_elem else '0'
+
+            # Извлекаем рейтинг товара (если доступен)
+            rating_elem = card.select_one('div.rating__stars')  # Ищем элемент со звездой рейтинга
+            # Если элемент найден, получаем значение атрибута 'data-rating'; иначе — ставим '0'
+            rating = rating_elem.get('data-rating', '0') if rating_elem else '0'
+
+            # name = name_elem.text.strip() if name_elem else 'Не указано'
+            # price = re.sub(r'\D', '', price_elem.text) if price_elem else '0'
+            # rating = rating_elem['data-rating'] if rating_elem and rating_elem.get('data-rating') else '0'
+
+            # Добавляем словарь с данными о текущем товаре в общий список
             products.append({
-                'url': product_url,
-                'name': name,
-                'price': price,
-                'rating': rating
+                'url': product_url,  # URL страницы товара
+                'name': name,  # Название товара
+                'price': price,  # Цена (только цифры)
+                'rating': rating  # Рейтинг (значение из data-rating)
             })
-        return products
+        return products  # Возвращаем список словарей с информацией о всех найденных товарах
 
     def parse_product_detail(self, soup, product_url):
         """Парсинг детальной информации о товаре"""

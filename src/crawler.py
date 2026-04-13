@@ -22,7 +22,7 @@ class Crawler:
         self.base_url = base_url
         self.delay = delay
         self.test_mode = test_mode
-        self.parser = Parser(base_url)
+        # self.parser = Parser(base_url)
 
     # def get_product_urls(self, page_url):
     #     soup = self.parser.fetch_page()
@@ -46,7 +46,9 @@ class Crawler:
             if not page_links:
                 return 1
 
-            # Берём последний номер страницы
+            # Считаем, что последний номер страницы = 1.
+            # Это «страховка»: если не найдём номеров страниц или все попытки парсинга провалятся,
+            # программа будет считать, что есть хотя бы одна страница.
             last_page_num = 1
             for link in page_links:
                 try:
@@ -61,7 +63,7 @@ class Crawler:
             return 3 if self.test_mode else 10  # В тестовом режиме — 3 страницы, иначе — 10
             # return 10  # По умолчанию — 10 страниц
 
-    def crawl(self, max_pages=5):
+    def crawl(self, max_pages=3):
         all_products = []
         page_num = 1
 
@@ -72,33 +74,49 @@ class Crawler:
             print(f"Парсинг страницы {page_num}: {page_url}")
 
             try:
-                # Парсим список товаров на странице
+                # --- НАЧАЛО РЕАЛИЗАЦИИ ПРОЦЕССА НАВИГАЦИИ ---
+
+                # 1. Создаём отдельный парсер для текущей страницы каталога
+                #    Это позволяет получить доступ к содержимому страницы с товарами
+                catalog_parser = Parser(page_url)
+                # -----Парсим список товаров на странице
                 soup = self.parser.fetch_page()
 
-                # Автоматическое определение количества страниц
+                # -----Автоматическое определение количества страниц
                 if max_pages is None:
                     max_pages = self._detect_total_pages(soup)
                     logger.info(f"Обнаружено страниц: {max_pages}")
 
-                # В тестовом режиме ограничиваем количество страниц
+                # -----В тестовом режиме ограничиваем количество страниц
                 if self.test_mode and max_pages > 3:
                     max_pages = 3
                     logger.info("Активирован тестовый режим — парсинг ограничен 3 страницами")
 
-                product_list = self.parser.parse_product_list(soup)
+                # 2. Получаем список товаров с текущей страницы каталога
+                #    Используем метод parse_product_list для извлечения базовой информации
+                #    (URL, название, цена, рейтинг) о каждом товаре на странице
+                product_list = catalog_parser.parse_product_list(soup)
 
                 if not product_list:  # Если на странице нет товаров — конец пагинации
                     logger.info("Достигнут конец пагинации")
                     break
 
+                logger.info(f"Найдено товаров на странице: {len(product_list)}")
+
+                # 3. Для каждого товара из списка:
+                #    а) создаём новый парсер для страницы конкретного товара;
+                #    б) переходим на страницу товара по извлечённому URL;
+                #    в) парсим детальную информацию о товаре
                 for product_info in product_list:
                     try:
-                        # Парсим детальную информацию о товаре
+                        # Создаём парсер для страницы конкретного товара
                         detail_parser = Parser(product_info['url'])
+                        # Загружаем содержимое страницы товара
                         detail_soup = detail_parser.fetch_page()
+                        # Парсим детальную информацию (описание, инструкция, страна и т.д.)
                         product = detail_parser.parse_product_detail(detail_soup, product_info['url'])
 
-                        # Обновляем данные из каталога, если нужно
+                        # Обновляем данные из каталога, если нужно (например, если на детальной странице нет цены)
                         if product.price == '0':
                             product.price = product_info['price']
                         if product.rating == '0':
@@ -115,11 +133,13 @@ class Crawler:
                         logger.error(f"Ошибка при обработке товара {product_info.get('url', 'unknown')}: {e}")
                         continue
 
+            # --- КОНЕЦ РЕАЛИЗАЦИИ ПРОЦЕССА НАВИГАЦИИ ---
+
             except Exception as e:
                 logger.error(f"Ошибка при обработке страницы {page_url}: {e}")
                 break  # или continue, в зависимости от логики
 
-            # Проверка условия завершения
+            # Проверка условия завершения (достигнут ли лимит страниц)
             if max_pages and page_num >= max_pages:
                 break
 
