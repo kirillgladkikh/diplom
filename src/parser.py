@@ -2,7 +2,8 @@ import requests
 from src.product import Product
 from bs4 import BeautifulSoup
 import re
-import time
+# import time
+
 
 # использованы АКУТАЛЬНЫЕ селекторы полей
 class Parser:
@@ -18,7 +19,8 @@ class Parser:
         response.raise_for_status()
         return BeautifulSoup(response.content, 'html.parser')
 
-    def parse_product_list(self, soup):
+    @staticmethod
+    def parse_product_list(soup):
         """Парсинг списка товаров на странице каталога"""
         products = []
         cards = soup.select('a.product-card__link')
@@ -29,7 +31,7 @@ class Parser:
             rating_elem = card.select_one('div.rating__stars')
 
             name = name_elem.text.strip() if name_elem else 'Не указано'
-            price = re.sub(r'[^\d]', '', price_elem.text) if price_elem else '0'
+            price = re.sub(r'\D', '', price_elem.text) if price_elem else '0'
             rating = rating_elem['data-rating'] if rating_elem and rating_elem.get('data-rating') else '0'
 
             products.append({
@@ -48,7 +50,7 @@ class Parser:
 
         # Цена
         price_elem = soup.select_one('span.current-price, div.price__current')
-        price = re.sub(r'[^\d]', '', price_elem.text) if price_elem else '0'
+        price = re.sub(r'\D', '', price_elem.text) if price_elem else '0'
 
         # Описание
         desc_elem = soup.select_one('div.product-description__content')
@@ -81,7 +83,8 @@ class Parser:
             country=country
         )
 
-    def _get_rating_from_detail(self, soup):
+    @staticmethod
+    def _get_rating_from_detail(soup):
         """Извлечение рейтинга со страницы товара"""
         rating_elem = soup.select_one('div.rating__value')
         if rating_elem:

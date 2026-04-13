@@ -1,5 +1,5 @@
 from src.parser import Parser
-from urllib.parse import urljoin
+# from urllib.parse import urljoin
 import time
 import random
 import logging
@@ -24,14 +24,14 @@ class Crawler:
         self.test_mode = test_mode
         self.parser = Parser(base_url)
 
-    def get_product_urls(self, page_url):
-        soup = self.parser.fetch_page()
-        product_links = []
-        for link in soup.select('a.product-card__link'):
-            href = link['href']
-            full_url = urljoin(self.base_url, href)
-            product_links.append(full_url)
-        return product_links
+    # def get_product_urls(self, page_url):
+    #     soup = self.parser.fetch_page()
+    #     product_links = []
+    #     for link in soup.select('a.product-card__link'):
+    #         href = link['href']
+    #         full_url = urljoin(self.base_url, href)
+    #         product_links.append(full_url)
+    #     return product_links
 
     def _detect_total_pages(self, soup):
         """Автоматическое определение общего количества страниц"""

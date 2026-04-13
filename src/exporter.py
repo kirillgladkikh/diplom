@@ -1,5 +1,5 @@
 import csv
-from .product import Product
+# from .product import Product
 
 class CSVExporter:
     def __init__(self, filename):
