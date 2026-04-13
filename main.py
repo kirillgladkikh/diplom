@@ -1,6 +1,7 @@
 from src.crawler import Crawler
 from src.exporter import CSVExporter
 import logging
+import sys
 
 
 # Настройка логирования
@@ -14,19 +15,29 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+BASE_URL = "https://goldapple.ru/parfjumerija"
+OUTPUT_FILE = "output/goldapple_perfumes.csv"
 
 # использованы АКУТАЛЬНЫЕ селекторы полей
 def main():
-    BASE_URL = "https://goldapple.ru/parfjumerija"
-    OUTPUT_FILE = "output/goldapple_perfumes.csv"
+    logger.info("Запуск скрапинга Gold Apple Парфюмерия")
 
     # Инициализация краулера (задержка 2 секунды между запросами)
     crawler = Crawler(BASE_URL, delay=2)
-    products = crawler.crawl(max_pages=3)  # Сканирование 3 страниц для теста
+    # products = crawler.crawl(max_pages=3)  # Сканирование 3 страниц для теста
 
-    # Экспорт в CSV
-    exporter = CSVExporter(OUTPUT_FILE)
-    exporter.export(products)
+    try:
+        products = crawler.crawl()  # Автоматическое определение страниц
+        logger.info(f"Собрано товаров: {len(products)}")
+
+        # Экспорт в CSV
+        exporter = CSVExporter(OUTPUT_FILE)
+        exporter.export(products)
+
+        logger.info(f"Данные успешно сохранены в {OUTPUT_FILE}")
+
+    except Exception as e:
+        logger.critical(f"Критическая ошибка при выполнении скрапинга: {e}")
 
 if __name__ == "__main__":
     main()
