@@ -26,11 +26,15 @@ def main():
     logger.info("Запуск скрапинга Gold Apple Парфюмерия")
 
     # Инициализация краулера (задержка 2 секунды между запросами)
-    crawler = Crawler(BASE_URL, delay=2)
+    crawler = Crawler(
+        base_url=BASE_URL,
+        delay=2,
+        test_mode=TEST_MODE  # Передаём значение глобальной переменной
+    )
 
     # products = crawler.crawl(max_pages=3)  # Сканирование 3 страниц для теста
     try:
-        products = crawler.crawl()  # Автоматическое определение страниц
+        products = crawler.crawl(max_pages=None)  # Запускаем автоопределение
         logger.info(f"Собрано товаров: {len(products)}")
 
         # Экспорт в CSV

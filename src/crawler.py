@@ -21,7 +21,7 @@ class Crawler:
     def __init__(self, base_url, delay=2, test_mode=True):
         self.base_url = base_url
         self.delay = delay
-        self.test_mode = test_mode
+        self.test_mode = test_mode  # Берётся из TEST_MODE
         # self.parser = Parser(base_url)
 
     # def get_product_urls(self, page_url):
@@ -79,15 +79,15 @@ class Crawler:
                 # 1. Создаём отдельный парсер для текущей страницы каталога
                 #    Это позволяет получить доступ к содержимому страницы с товарами
                 catalog_parser = Parser(page_url)
-                # -----Парсим список товаров на странице
-                soup = self.parser.fetch_page()
+                # Парсим список товаров на странице
+                soup = catalog_parser.fetch_page()
 
-                # -----Автоматическое определение количества страниц
+                # Автоматическое определение количества страниц
                 if max_pages is None:
                     max_pages = self._detect_total_pages(soup)
                     logger.info(f"Обнаружено страниц: {max_pages}")
 
-                # -----В тестовом режиме ограничиваем количество страниц
+                # В тестовом режиме ограничиваем количество страниц
                 if self.test_mode and max_pages > 3:
                     max_pages = 3
                     logger.info("Активирован тестовый режим — парсинг ограничен 3 страницами")
