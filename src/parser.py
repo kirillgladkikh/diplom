@@ -1,4 +1,5 @@
 import requests
+from src.product import Product
 from bs4 import BeautifulSoup
 import re
 import time
