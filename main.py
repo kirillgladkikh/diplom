@@ -27,8 +27,8 @@ def main():
 
     # Инициализация краулера (задержка 2 секунды между запросами)
     crawler = Crawler(BASE_URL, delay=2)
-    # products = crawler.crawl(max_pages=3)  # Сканирование 3 страниц для теста
 
+    # products = crawler.crawl(max_pages=3)  # Сканирование 3 страниц для теста
     try:
         products = crawler.crawl()  # Автоматическое определение страниц
         logger.info(f"Собрано товаров: {len(products)}")
