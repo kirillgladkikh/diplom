@@ -1,4 +1,4 @@
-from .parser import Parser
+from src.parser import Parser
 from urllib.parse import urljoin
 import time
 import random
@@ -18,9 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class Crawler:
-    def __init__(self, base_url, delay=2):
+    def __init__(self, base_url, delay=2, test_mode=True):
         self.base_url = base_url
         self.delay = delay
+        self.test_mode = test_mode
         self.parser = Parser(base_url)
 
     def get_product_urls(self, page_url):
@@ -57,7 +58,8 @@ class Crawler:
             return last_page_num
         except Exception as e:
             logger.warning(f"Не удалось определить количество страниц: {e}")
-            return 10  # По умолчанию — 10 страниц
+            return 3 if self.test_mode else 10  # В тестовом режиме — 3 страницы, иначе — 10
+            # return 10  # По умолчанию — 10 страниц
 
     def crawl(self, max_pages=5):
         all_products = []
@@ -77,6 +79,11 @@ class Crawler:
                 if max_pages is None:
                     max_pages = self._detect_total_pages(soup)
                     logger.info(f"Обнаружено страниц: {max_pages}")
+
+                # В тестовом режиме ограничиваем количество страниц
+                if self.test_mode and max_pages > 3:
+                    max_pages = 3
+                    logger.info("Активирован тестовый режим — парсинг ограничен 3 страницами")
 
                 product_list = self.parser.parse_product_list(soup)
 

@@ -15,6 +15,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Флаг тестового режима
+TEST_MODE = True  # Установите False для полного парсинга
+
 BASE_URL = "https://goldapple.ru/parfjumerija"
 OUTPUT_FILE = "output/goldapple_perfumes.csv"
 
