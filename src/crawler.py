@@ -1,6 +1,7 @@
 from .parser import Parser
 from urllib.parse import urljoin
 import time
+import random
 import logging
 
 
@@ -33,28 +34,64 @@ class Crawler:
 
     def crawl(self, max_pages=5):
         all_products = []
+        page_num = 1
 
-        for page_num in range(1, max_pages + 1):
+        while True:
+        # for page_num in range(1, max_pages + 1):
             page_url = f"{self.base_url}?page={page_num}"
+            logger.info(f"Парсинг страницы {page_num}: {page_url}")
             print(f"Парсинг страницы {page_num}: {page_url}")
 
-            # Парсим список товаров на странице
-            soup = self.parser.fetch_page()
-            product_list = self.parser.parse_product_list(soup)
+            try:
+                # Парсим список товаров на странице
+                soup = self.parser.fetch_page()
 
-            for product_info in product_list:
-                # Парсим детальную информацию о товаре
-                detail_parser = Parser(product_info['url'])
-                detail_soup = detail_parser.fetch_page()
-                product = detail_parser.parse_product_detail(detail_soup, product_info['url'])
+                # Автоматическое определение количества страниц
+                if max_pages is None:
+                    max_pages = self._detect_total_pages(soup)
+                    logger.info(f"Обнаружено страниц: {max_pages}")
 
-                # Обновляем данные из каталога, если нужно
-                if product.price == '0':
-                    product.price = product_info['price']
-                if product.rating == '0':
-                    product.rating = product_info['rating']
+                product_list = self.parser.parse_product_list(soup)
 
-                all_products.append(product)
-                time.sleep(self.delay)  # Задержка для избежания блокировки
+                if not product_list:  # Если на странице нет товаров — конец пагинации
+                    logger.info("Достигнут конец пагинации")
+                    break
+
+                for product_info in product_list:
+                    try:
+                        # Парсим детальную информацию о товаре
+                        detail_parser = Parser(product_info['url'])
+                        detail_soup = detail_parser.fetch_page()
+                        product = detail_parser.parse_product_detail(detail_soup, product_info['url'])
+
+                        # Обновляем данные из каталога, если нужно
+                        if product.price == '0':
+                            product.price = product_info['price']
+                        if product.rating == '0':
+                            product.rating = product_info['rating']
+
+                        all_products.append(product)
+                        logger.info(f"Обработан товар: {product.name}")
+
+                        # Случайная задержка между запросами (2–4 секунды)
+                        sleep_time = random.uniform(2, 4)
+                        time.sleep(sleep_time)  # Задержка для избежания блокировки
+
+                    except Exception as e:
+                        logger.error(f"Ошибка при обработке товара {product_info.get('url', 'unknown')}: {e}")
+                        continue
+
+            except Exception as e:
+                logger.error(f"Ошибка при обработке страницы {page_url}: {e}")
+                break  # или continue, в зависимости от логики
+
+            # Проверка условия завершения
+            if max_pages and page_num >= max_pages:
+                break
+
+            page_num += 1
+
+            # Дополнительная задержка между страницами
+            time.sleep(random.uniform(3, 5))
 
         return all_products
