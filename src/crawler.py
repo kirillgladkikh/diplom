@@ -32,6 +32,33 @@ class Crawler:
             product_links.append(full_url)
         return product_links
 
+    def _detect_total_pages(self, soup):
+        """Автоматическое определение общего количества страниц"""
+        try:
+            # Ищем элемент с пагинацией
+            pagination = soup.select_one('div.pagination')
+            if not pagination:
+                return 1  # Если пагинации нет — одна страница
+
+            # Ищем все номера страниц
+            page_links = pagination.select('a.pagination__link')
+            if not page_links:
+                return 1
+
+            # Берём последний номер страницы
+            last_page_num = 1
+            for link in page_links:
+                try:
+                    page_num = int(link.text.strip())
+                    if page_num > last_page_num:
+                        last_page_num = page_num
+                except ValueError:
+                    continue
+            return last_page_num
+        except Exception as e:
+            logger.warning(f"Не удалось определить количество страниц: {e}")
+            return 10  # По умолчанию — 10 страниц
+
     def crawl(self, max_pages=5):
         all_products = []
         page_num = 1
