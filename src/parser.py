@@ -18,7 +18,6 @@ from src.config import (
     SELECTORS_PDP, OUTPUT_FILENAME, SELECTORS_REVIEW
 )
 from src.product import Product
-from src.utils import parse_price
 
 
 class Parser:
@@ -158,6 +157,26 @@ class Parser:
 
         except Exception as e:
             print(f"⚠️ Не удалось получить цену: {e}")
+            return ""
+
+    def _get_description(self) -> str:
+        """Получает описание продукта"""
+        try:
+            if self.driver is None:
+                return ""
+
+            description = self._get_text(SELECTORS_PDP["product_description"])
+            if not description:
+                return ""
+
+            # Нормализуем пробелы
+            description = re.sub(r'\s+', ' ', description).strip()
+
+            # Обрезаем до 500 символов если нужно
+            return description[:500] if len(description) > 500 else description
+
+        except Exception as e:
+            print(f"⚠️ Не удалось получить описание: {e}")
             return ""
 
     def _get_rating_from_review_page(self, product_url: str) -> str:
@@ -350,11 +369,11 @@ class Parser:
                 print(f"❌ Не удалось загрузить страницу: {product.url}")
                 return product
 
-            # ОТЛАДКА: сохраняем HTML страницы
-            filename = f"debug_{product.url.split('/')[-1]}.html"
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write(self.driver.page_source)
-            print(f"💾 Сохранён HTML: {filename}")
+            # # ОТЛАДКА: сохраняем HTML страницы
+            # filename = f"debug_{product.url.split('/')[-1]}.html"
+            # with open(filename, "w", encoding="utf-8") as f:
+            #     f.write(self.driver.page_source)
+            # print(f"💾 Сохранён HTML: {filename}")
 
             # 1. Название (из h1)
             product.name = self._get_product_name()
@@ -363,10 +382,7 @@ class Parser:
             product.price = self._get_price()
 
             # 4. Описание продукта
-            description = self._get_text(SELECTORS_PDP["product_description"])
-            if description:
-                description = re.sub(r'\s+', ' ', description).strip()
-                product.description = description[:500] if len(description) > 500 else description
+            product.description = self._get_description()
 
             # 5. Инструкция по применению (с раскрытием вкладки!)
             product.instructions = self._get_instructions()
