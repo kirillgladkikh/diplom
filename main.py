@@ -6,23 +6,23 @@ from src.config import OUTPUT_FILENAME, TEST_MODE
 
 
 def main():
-    # """Главный модуль для запуска парсера"""
-    # print("\n" + "=" * 60)
-    # print("ПАРСИНГ САЙТА ЗОЛОТОЕ ЯБЛОКО")
-    # print("=" * 60 + "\n")
-    #
-    # # Шаг 1: Собираем ссылки на все продукты
-    # print("1. Сбор ссылок на продукты...")
-    # crawler = Crawler()
-    # products = crawler.get_products()
-    #
-    # # Шаг 2: Сохраняем ссылки в CSV
-    # print("\n2. Сохранение ссылок в CSV...")
-    # exporter = CSVExporter(OUTPUT_FILENAME)
-    # exporter.export(products)
-    #
-    # # Шаг 3: Парсим детальную информацию о продуктах
-    # print("\n3. Парсинг детальной информации о продуктах...")
+    """Главный модуль для запуска парсера"""
+    print("\n" + "=" * 60)
+    print("ПАРСИНГ САЙТА ЗОЛОТОЕ ЯБЛОКО")
+    print("=" * 60 + "\n")
+
+    # Шаг 1: Собираем ссылки на все продукты
+    print("1. Сбор ссылок на продукты...")
+    crawler = Crawler()
+    products = crawler.get_products()
+
+    # Шаг 2: Сохраняем ссылки в CSV
+    print("\n2. Сохранение ссылок в CSV...")
+    exporter = CSVExporter(OUTPUT_FILENAME)
+    exporter.export(products)
+
+    # Шаг 3: Парсим детальную информацию о продуктах
+    print("\n3. Парсинг детальной информации о продуктах...")
 
     # Проверяем, есть ли файл с ссылками
     csv_path = os.path.join("data", OUTPUT_FILENAME)
@@ -30,9 +30,9 @@ def main():
         parser = Parser()
 
         if TEST_MODE:
-            # В тестовом режиме парсим только первые 5 продуктов
-            print("   Тестовый режим: парсинг первых 5 продуктов")
-            parser.parse_all(limit=5)
+            # В тестовом режиме парсим только первые 1 продуктов
+            print("   Тестовый режим: парсинг первых 1 продуктов")
+            parser.parse_all(limit=1)
         else:
             # В полном режиме парсим всё
             print("   Полный режим: парсинг всех продуктов")
