@@ -83,6 +83,17 @@ class Parser:
                 self.driver.execute_script("window.scrollTo(0, 0);")
                 time.sleep(3)
 
+                # ========== ДОБАВЬТЕ ЭТОТ БЛОК ЗДЕСЬ ==========
+                # Ждем загрузки вкладок (после прокруток, чтобы контент точно подгрузился)
+                try:
+                    WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='ga-tabs-tab']"))
+                    )
+                    print(f"  📑 Вкладки загружены")
+                except Exception as e:
+                    print(f"  ⚠️ Вкладки не найдены: {e}")
+                # ============================================
+
 
                 # # Прокручиваем страницу для триггера загрузки динамических блоков
                 # self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
@@ -240,96 +251,60 @@ class Parser:
             return ""
 
     def _get_country(self) -> str:
-        """Получает страну-производитель"""
+        """Получает страну-производитель - комбинированный подход"""
         try:
             if self.driver is None:
                 return ""
 
-            # Прокручиваем вниз
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(1)
+            # Кликаем по вкладке
+            try:
+                additional_tab = self.driver.find_element(
+                    By.XPATH,
+                    "//button[contains(@class, 'ga-tabs-tab')]//div[contains(text(), 'Дополнительная информация')]"
+                )
+                additional_tab.click()
+                time.sleep(2)
+                print(f"  🔘 Кликнули по вкладке 'Дополнительная информация'")
+            except Exception as e:
+                print(f"  ⚠️ Не удалось кликнуть вкладку: {e}")
 
-            # Ищем div с классом wysiwyg (там обычно вся доп. информация)
-            wysiwyg_elements = self.driver.find_elements(By.CSS_SELECTOR, "._ga-pdp-wysiwyg_rmnt6_55")
+            # Получаем весь блок
+            container = self.driver.find_element(
+                By.XPATH,
+                "//div[contains(@class, 'wysiwyg') and contains(text(), 'страна происхождения')]"
+            )
 
-            for element in wysiwyg_elements:
-                text = element.text
-                if 'страна' in text.lower():
-                    country = self._extract_country_from_text(text)
-                    if country:
-                        print(f"  🌍 Найдена страна: {country}")
-                        return country
+            # Способ 1: Через innerHTML и <br>
+            inner_html = container.get_attribute('innerHTML')
+            import re
+            parts = re.split(r'<br\s*/?>', inner_html)
 
-            return ""
+            for i, part in enumerate(parts):
+                if 'страна происхождения' in part:
+                    if i + 1 < len(parts):
+                        country = re.sub(r'<[^>]+>', '', parts[i + 1]).strip()
+                        if country:
+                            print(f"  🌍 Найдена страна (через <br>): {country}")
+                            return country
+                    break
+
+            # Способ 2: Если не сработало, пробуем через текст и переносы строк
+            full_text = container.text
+            lines = full_text.split('\n')
+            for i, line in enumerate(lines):
+                if 'страна происхождения' in line.lower():
+                    for j in range(i + 1, len(lines)):
+                        if lines[j].strip():
+                            country = lines[j].strip()
+                            print(f"  🌍 Найдена страна (через text): {country}")
+                            return country
+                            break
+                    break
 
         except Exception as e:
-            print(f"⚠️ Ошибка при получении страны: {e}")
-            return ""
+            print(f"  ⚠️ Страна не найдена: {e}")
 
-    # def _get_country(self) -> str:
-    #     """Получает страну-производитель из раздела 'Дополнительная информация'"""
-    #     try:
-    #         if self.driver is None:
-    #             return ""
-    #
-    #         # 1. Сначала находим и раскрываем вкладку "Дополнительная информация"
-    #         try:
-    #             # Ищем заголовок раздела
-    #             section_header = self.driver.find_element(
-    #                 By.XPATH,
-    #                 "//h2[contains(text(), 'Дополнительная информация')]"
-    #             )
-    #
-    #             # Находим родительскую секцию
-    #             parent_section = section_header.find_element(By.XPATH, "./ancestor::section")
-    #
-    #             # Находим кнопку-аккордеон
-    #             button = parent_section.find_element(By.CSS_SELECTOR, "button")
-    #
-    #             # Проверяем, раскрыт ли раздел
-    #             content_div = parent_section.find_element(By.CSS_SELECTOR, ".ga-accordion-item__content")
-    #
-    #             # Если содержимое скрыто, кликаем
-    #             if content_div.value_of_css_property("display") == "none":
-    #                 print(f"  📂 Раскрываем вкладку 'Дополнительная информация'")
-    #                 self.driver.execute_script("arguments[0].click();", button)
-    #                 time.sleep(1)  # Ждём раскрытия
-    #
-    #         except NoSuchElementException:
-    #             print(f"  ℹ️ Раздел 'Дополнительная информация' не найден")
-    #             return ""
-    #
-    #         # 2. Теперь ищем страну в раскрытом разделе
-    #         # Ищем блок с содержимым
-    #         try:
-    #             content = self.driver.find_element(By.CSS_SELECTOR,
-    #                                                ".ga-accordion-item__content ._ga-pdp-wysiwyg_rmnt6_55")
-    #             text = content.text
-    #             return self._extract_country_from_text(text)
-    #         except NoSuchElementException:
-    #             pass
-    #
-    #         # Альтернативный поиск
-    #         xpaths = [
-    #             "//section[.//h2[contains(text(), 'Дополнительная информация')]]//div[contains(@class, '_ga-pdp-wysiwyg')]",
-    #             "//div[contains(@class, 'ga-accordion-item__content')]//div[contains(@class, 'wysiwyg')]",
-    #         ]
-    #
-    #         for xpath in xpaths:
-    #             try:
-    #                 element = self.driver.find_element(By.XPATH, xpath)
-    #                 text = element.text
-    #                 country = self._extract_country_from_text(text)
-    #                 if country:
-    #                     return country
-    #             except NoSuchElementException:
-    #                 continue
-    #
-    #         return ""
-    #
-    #     except Exception as e:
-    #         print(f"⚠️ Ошибка при получении страны: {e}")
-    #         return ""
+        return ""
 
     def _extract_country_from_text(self, text: str) -> str:
         """Извлекает страну из текста раздела Дополнительная информация"""

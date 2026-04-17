@@ -6,10 +6,10 @@ OUTPUT_FILENAME = "goldapple_perfumes.csv"  # Имя выходного CSV-фа
 
 # Настройки парсинга
 TEST_MODE = True  # Установить False для полной пагинации
-TEST_MODE_PAGES = 3  # Установить количество страниц для тестовой пагинации (увеличьте для отладки отбоя сервером)
+TEST_MODE_PAGES = 1  # Установить количество страниц для тестовой пагинации (увеличьте для отладки отбоя сервером)
 DEFAULT_MAX_PAGES = 500  # Количество страниц принудительного прерывания пагинации
 REQUEST_DELAY_MIN = 0.3  # Нижняя граница случайного диапазона запросов к серверу
-REQUEST_DELAY_MAX = 1.5  # Верхняя граница случайного диапазона запросов к серверу
+REQUEST_DELAY_MAX = 3.0  # Верхняя граница случайного диапазона запросов к серверу
 RETRY_COUNT = 3  # Задержка при сбое доступа к серверу при пагинации
 
 # СЕЛЕКТОРЫ ДЛЯ СТРАНИЦЫ КАТАЛОГА (PLP)
@@ -28,23 +28,54 @@ SELECTORS_PDP = {
 
     # Цена
     "product_price": [
-        "[itemprop='price']",
         "._ga-price_1dj1y_114",
+        "[itemprop='price']",
+        "._ga-pdp-price-guest__price_1mmpu_157 ._ga-price_1dj1y_114",
+        "[class*='_ga-price']",
+        # "[itemprop='price']", РАБОТАЕТ
+        # "._ga-price_1dj1y_114", РАБОТАЕТ
     ],
 
-    # Рейтинг
-    "product_rating": ["[class*='rating-value']"],
+    # Рейтинг (используем частичное совпадение, игнорируя динамический хэш)
+    "product_rating": [
+        "[itemprop='ratingValue']",  # Самый надёжный
+        "._ga-review-score-point__numeral_y1ia3_15",  # Точный класс
+        "[class*='_ga-review-score-point__numeral']",  # Частичное совпадение
+        "[class*='rating-value']",  # Альтернативный вариант
+        # "[itemprop='ratingValue']",  # Самый надёжный
+        # "._ga-review-score-point__numeral_y1ia3_15",  # Точный класс
+        # "[class*='_ga-review-score-point__numeral']",  # Частичное совпадение
+        # # "[class*='_ga-review-score-point__numeral']",  # Любой класс, содержащий эту подстроку
+        # # "[class*='rating-value']",  # Альтернативный вариант
+        # # "[itemprop='ratingValue']",  # Schema.org атрибут
+    ],
 
-    # Описание
-    "product_description": ["[itemprop='description']"],
+    # Описание (из блока wysiwyg)
+    "product_description": [
+        "._ga-pdp-wysiwyg_rmnt6_55",
+        "[itemprop='description']",
+    ],
 
     # Инструкция по применению
     "product_instructions": [
-        "//h2[contains(text(), 'Применение')]/ancestor::section//div[contains(@class, 'wysiwyg')]"
+        "//section[.//h2[contains(text(), 'Применение')]]//div[contains(@class, '_ga-pdp-wysiwyg_rmnt6_55')]",
+        "//div[contains(@class, 'ga-accordion-item')][.//h2[contains(text(), 'Применение')]]//div[contains(@class, '_ga-pdp-wysiwyg')]",
     ],
 
     # Страна-производитель
     "product_country": [
-        "//div[contains(@class, 'wysiwyg')]//text()[contains(., 'страна')]"
+        "//div[contains(@class, 'wysiwyg') and contains(text(), 'страна происхождения')]",
+        "//div[contains(@class, '_ga-pdp-wysiwyg')]//*[contains(text(), 'страна происхождения')]/following-sibling::text()[1]",
+        # "//section[.//h2[contains(text(), 'Дополнительная информация')]]//div[contains(@class, '_ga-pdp-wysiwyg_rmnt6_55')]",
+        # "//div[contains(@class, 'ga-accordion-item')][.//h2[contains(text(), 'Дополнительная информация')]]//div[contains(@class, '_ga-pdp-wysiwyg')]",
+    ],
+}
+
+# СЕЛЕКТОРЫ ДЛЯ СТРАНИЦЫ ОТЗЫВОВ (REVIEW)
+SELECTORS_REVIEW = {
+    # Рейтинг товара (из вашего HTML)
+    "product_rating": [
+        "._ga-review-score-point__numeral",
+        "[itemprop='ratingValue']",
     ],
 }
