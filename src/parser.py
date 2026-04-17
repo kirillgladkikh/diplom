@@ -1,5 +1,3 @@
-"""Парсинг детальной информации о товаре"""
-
 import os
 import time
 import random
