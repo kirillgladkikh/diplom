@@ -2,13 +2,20 @@ import time
 import random
 import re
 import logging
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException  # НОВЫЙ: импорт для обработки таймаутов
 
 from src.config import (
     BASE_URL, TEST_MODE, TEST_MODE_PAGES, DEFAULT_MAX_PAGES,
-    REQUEST_DELAY_MIN, REQUEST_DELAY_MAX, RETRY_COUNT,
+    REQUEST_DELAY_MIN, REQUEST_DELAY_MAX,
+    PAGE_DELAY_MIN, PAGE_DELAY_MAX,  # НОВЫЙ: задержки между страницами
+    RETRY_DELAY_MIN, RETRY_DELAY_MAX,  # НОВЫЙ: задержки перед повторными попытками
+    RETRY_COUNT,  # ИЗМЕНЕНО: теперь используется не только для пагинации
     SELECTORS_PLP
 )
 from src.product import Product
@@ -40,73 +47,171 @@ class Crawler:
         driver.set_page_load_timeout(30)
         return driver
 
-    def _random_delay(self):
+    def _random_delay(self, min_delay=None, max_delay=None):
         """Случайная задержка"""
-        delay = random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX)
+        # ИЗМЕНЕНО: теперь можно переопределять диапазон задержки
+        min_d = min_delay if min_delay is not None else REQUEST_DELAY_MIN
+        max_d = max_delay if max_delay is not None else REQUEST_DELAY_MAX
+        delay = random.uniform(min_d, max_d)
         time.sleep(delay)
+    # def _random_delay(self):
+    #     """Случайная задержка"""
+    #     delay = random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX)
+    #     time.sleep(delay)
 
     def _get_total_pages(self):
         """Определяет общее количество страниц"""
         if TEST_MODE:
-            # Тестовый режим
             logger.info(f"Тестовый режим: обрабатываем {TEST_MODE_PAGES} страниц")
             return TEST_MODE_PAGES
 
-        try:
-            # Боевой режим
-            self.driver.get(self.base_url)
-            self._random_delay()  # ← используем случайную задержку
+        # НОВЫЙ: цикл повторных попыток при определении количества страниц
+        for attempt in range(RETRY_COUNT):
+            try:
+                self.driver.get(self.base_url)
+                self._random_delay()
 
-            pagination = self.driver.find_element(By.CSS_SELECTOR, SELECTORS_PLP["pagination_container"])
-            pagination_text = pagination.text
-            numbers = re.findall(r'\d+', pagination_text)
-            if numbers:
-                last_page = max(int(n) for n in numbers)
-                logger.info(f"Всего страниц: {last_page}")
-                return min(last_page, DEFAULT_MAX_PAGES)
-        except Exception as e:
-            logger.error(f"Не удалось определить количество страниц: {e}")
+                # НОВЫЙ: явное ожидание загрузки пагинации
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, SELECTORS_PLP["pagination_container"]))
+                )
 
+                pagination = self.driver.find_element(By.CSS_SELECTOR, SELECTORS_PLP["pagination_container"])
+                pagination_text = pagination.text
+                numbers = re.findall(r'\d+', pagination_text)
+                if numbers:
+                    last_page = max(int(n) for n in numbers)
+                    logger.info(f"Всего страниц: {last_page}")
+                    return min(last_page, DEFAULT_MAX_PAGES)
+
+            # НОВЫЙ: обработка таймаута
+            except TimeoutException:
+                logger.warning(f"Таймаут при определении количества страниц, попытка {attempt + 1}/{RETRY_COUNT}")
+                if attempt < RETRY_COUNT - 1:
+                    self._random_delay(RETRY_DELAY_MIN, RETRY_DELAY_MAX)
+
+            except Exception as e:
+                logger.error(f"Не удалось определить количество страниц: {e}")
+                if attempt < RETRY_COUNT - 1:
+                    self._random_delay(RETRY_DELAY_MIN, RETRY_DELAY_MAX)
+
+        # ИЗМЕНЕНО: логирование при использовании значения по умолчанию
+        logger.warning(f"Не удалось определить количество страниц, используем DEFAULT_MAX_PAGES={DEFAULT_MAX_PAGES}")
         return DEFAULT_MAX_PAGES
+    # def _get_total_pages(self):
+    #     """Определяет общее количество страниц"""
+    #     if TEST_MODE:
+    #         # Тестовый режим
+    #         logger.info(f"Тестовый режим: обрабатываем {TEST_MODE_PAGES} страниц")
+    #         return TEST_MODE_PAGES
+    #
+    #     try:
+    #         # Боевой режим
+    #         self.driver.get(self.base_url)
+    #         self._random_delay()  # ← используем случайную задержку
+    #
+    #         pagination = self.driver.find_element(By.CSS_SELECTOR, SELECTORS_PLP["pagination_container"])
+    #         pagination_text = pagination.text
+    #         numbers = re.findall(r'\d+', pagination_text)
+    #         if numbers:
+    #             last_page = max(int(n) for n in numbers)
+    #             logger.info(f"Всего страниц: {last_page}")
+    #             return min(last_page, DEFAULT_MAX_PAGES)
+    #     except Exception as e:
+    #         logger.error(f"Не удалось определить количество страниц: {e}")
+    #
+    #     return DEFAULT_MAX_PAGES
 
     def _extract_links_from_page(self, page_num):
         """Извлекает ссылки на продукты с одной страницы"""
         url = f"{self.base_url}?p={page_num}"
         logger.info(f"Страница {page_num}: {url}")
 
-        try:
-            self.driver.get(url)
-            self._random_delay()  # ← используем случайную задержку
+        # НОВЫЙ: цикл повторных попыток для загрузки страницы
+        for attempt in range(RETRY_COUNT):
+            try:
+                self.driver.get(url)
+                self._random_delay()
 
-            page_links = []
-            pattern = SELECTORS_PLP["product_link_pattern"]
+                # НОВЫЙ: явное ожидание загрузки тела страницы
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "body"))
+                )
 
-            # Находим все ссылки на странице
-            all_links = self.driver.find_elements(By.TAG_NAME, "a")
+                page_links = []
+                pattern = SELECTORS_PLP["product_link_pattern"]
 
-            for link in all_links:
-                try:
-                    href = link.get_attribute('href')
-                    if not href:
+                all_links = self.driver.find_elements(By.TAG_NAME, "a")
+
+                for link in all_links:
+                    try:
+                        href = link.get_attribute('href')
+                        if not href:
+                            continue
+
+                        clean_href = href.split('?')[0]
+
+                        if re.search(pattern, clean_href):
+                            if clean_href not in self.product_links:
+                                page_links.append(clean_href)
+                                self.product_links.add(clean_href)
+                    except:
                         continue
 
-                    # Очищаем от параметров
-                    clean_href = href.split('?')[0]
+                logger.info(f"Найдено {len(page_links)} новых ссылок")
+                return len(page_links)
 
-                    # Проверяем структуру URL
-                    if re.search(pattern, clean_href):
-                        if clean_href not in self.product_links:
-                            page_links.append(clean_href)
-                            self.product_links.add(clean_href)
-                except:
-                    continue
+            # НОВЫЙ: обработка таймаута
+            except TimeoutException:
+                logger.warning(f"Таймаут на странице {page_num}, попытка {attempt + 1}/{RETRY_COUNT}")
+                if attempt < RETRY_COUNT - 1:
+                    self._random_delay(RETRY_DELAY_MIN, RETRY_DELAY_MAX)
 
-            logger.info(f"Найдено {len(page_links)} новых ссылок")
-            return len(page_links)
-
-        except Exception as e:
-            logger.error(f"Ошибка на странице {page_num}: {e}")
-            return 0
+            except Exception as e:
+                logger.error(f"Ошибка на странице {page_num}: {e}")
+                if attempt < RETRY_COUNT - 1:
+                    self._random_delay(RETRY_DELAY_MIN, RETRY_DELAY_MAX)
+                else:
+                    return 0
+        return 0
+    # def _extract_links_from_page(self, page_num):
+    #     """Извлекает ссылки на продукты с одной страницы"""
+    #     url = f"{self.base_url}?p={page_num}"
+    #     logger.info(f"Страница {page_num}: {url}")
+    #
+    #     try:
+    #         self.driver.get(url)
+    #         self._random_delay()  # ← используем случайную задержку
+    #
+    #         page_links = []
+    #         pattern = SELECTORS_PLP["product_link_pattern"]
+    #
+    #         # Находим все ссылки на странице
+    #         all_links = self.driver.find_elements(By.TAG_NAME, "a")
+    #
+    #         for link in all_links:
+    #             try:
+    #                 href = link.get_attribute('href')
+    #                 if not href:
+    #                     continue
+    #
+    #                 # Очищаем от параметров
+    #                 clean_href = href.split('?')[0]
+    #
+    #                 # Проверяем структуру URL
+    #                 if re.search(pattern, clean_href):
+    #                     if clean_href not in self.product_links:
+    #                         page_links.append(clean_href)
+    #                         self.product_links.add(clean_href)
+    #             except:
+    #                 continue
+    #
+    #         logger.info(f"Найдено {len(page_links)} новых ссылок")
+    #         return len(page_links)
+    #
+    #     except Exception as e:
+    #         logger.error(f"Ошибка на странице {page_num}: {e}")
+    #         return 0
 
     def collect_all_links(self):
         """Собирает все ссылки на продукты"""
@@ -119,10 +224,14 @@ class Crawler:
             for page in range(1, total_pages + 1):
                 self._extract_links_from_page(page)
 
+                # НОВЫЙ: задержка между страницами (важно для вежливого поведения)
+                if page < total_pages and not TEST_MODE:
+                    logger.info(f"Ожидание перед загрузкой следующей страницы...")
+                    self._random_delay(PAGE_DELAY_MIN, PAGE_DELAY_MAX)
+
                 if TEST_MODE and page >= TEST_MODE_PAGES:
                     break
 
-            # Создаём объекты Product из ссылок
             for link in self.product_links:
                 products.append(Product(url=link))
 
@@ -132,6 +241,30 @@ class Crawler:
         finally:
             if self.driver:
                 self.driver.quit()
+    # def collect_all_links(self):
+    #     """Собирает все ссылки на продукты"""
+    #     self.driver = self._init_driver()
+    #     products = []
+    #
+    #     try:
+    #         total_pages = self._get_total_pages()
+    #
+    #         for page in range(1, total_pages + 1):
+    #             self._extract_links_from_page(page)
+    #
+    #             if TEST_MODE and page >= TEST_MODE_PAGES:
+    #                 break
+    #
+    #         # Создаём объекты Product из ссылок
+    #         for link in self.product_links:
+    #             products.append(Product(url=link))
+    #
+    #         logger.info(f"Сбор завершён! Всего собрано {len(products)} ссылок")
+    #         return products
+    #
+    #     finally:
+    #         if self.driver:
+    #             self.driver.quit()
 
     def get_products(self):
         """Главный метод для получения продуктов"""
