@@ -18,6 +18,7 @@ from src.config import (
     SELECTORS_PDP, OUTPUT_FILENAME, SELECTORS_REVIEW
 )
 from src.product import Product
+from src.utils import parse_price
 
 
 class Parser:
@@ -83,7 +84,6 @@ class Parser:
                 self.driver.execute_script("window.scrollTo(0, 0);")
                 time.sleep(3)
 
-                # ========== ДОБАВЬТЕ ЭТОТ БЛОК ЗДЕСЬ ==========
                 # Ждем загрузки вкладок (после прокруток, чтобы контент точно подгрузился)
                 try:
                     WebDriverWait(self.driver, 10).until(
@@ -92,12 +92,6 @@ class Parser:
                     print(f"  📑 Вкладки загружены")
                 except Exception as e:
                     print(f"  ⚠️ Вкладки не найдены: {e}")
-                # ============================================
-
-
-                # # Прокручиваем страницу для триггера загрузки динамических блоков
-                # self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
-                # time.sleep(1)
 
                 return True
             except (TimeoutException, Exception) as e:
@@ -136,18 +130,6 @@ class Parser:
                 continue
         return default
 
-    def _get_text_by_xpath(self, xpath, default: str = "") -> str:
-        """Получает текст элемента по XPath"""
-        if isinstance(xpath, list):
-            xpath = xpath[0]
-        try:
-            if self.driver is None:
-                return default
-            element = self.driver.find_element(By.XPATH, xpath)
-            return element.text.strip()
-        except NoSuchElementException:
-            return default
-
     def _get_product_name(self) -> str:
         """Получает название продукта из h1"""
         try:
@@ -159,59 +141,24 @@ class Parser:
             print(f"⚠️ Не удалось получить название: {e}")
             return ""
 
-    # def _get_rating(self) -> str:
-    #     """Получает рейтинг продукта с явным ожиданием загрузки"""
-    #     try:
-    #         if self.driver is None:
-    #             return ""
-    #
-    #         # Ждём загрузки элемента с рейтингом (увеличиваем до 10 секунд)
-    #         wait = WebDriverWait(self.driver, 10)
-    #
-    #         # Ищем ссылку, которая содержит рейтинг
-    #         selectors = [
-    #             "a[href*='/review/product/'] ._ga-review-score-point__numeral_y1ia3_15",
-    #             "a[href*='/review/product/'] [class*='_ga-review-score-point__numeral']",
-    #             "[itemprop='ratingValue']",
-    #             "._ga-review-score-point__numeral_y1ia3_15",
-    #             "[class*='_ga-review-score-point__numeral']",
-    #         ]
-    #
-    #         for selector in selectors:
-    #             try:
-    #                 # Ждём появления элемента
-    #                 element = wait.until(
-    #                     EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-    #                 )
-    #                 # Ждём, когда текст станет непустым
-    #                 wait.until(lambda d: element.text.strip())
-    #                 rating = element.text.strip()
-    #                 if rating and re.match(r'^\d+(\.\d+)?$', rating):
-    #                     print(f"  ✅ Найден рейтинг: {rating}")
-    #                     return rating
-    #             except TimeoutException:
-    #                 continue
-    #             except Exception as e:
-    #                 print(f"  ⚠️ Ошибка при селекторе {selector}: {e}")
-    #                 continue
-    #
-    #         # Если ничего не нашли, пробуем через XPath
-    #         try:
-    #             xpath = "//a[contains(@href, '/review/product/')]//div[contains(@class, 'numeral')]"
-    #             element = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
-    #             wait.until(lambda d: element.text.strip())
-    #             rating = element.text.strip()
-    #             if rating and re.match(r'^\d+(\.\d+)?$', rating):
-    #                 print(f"  ✅ Найден рейтинг: {rating} по XPath")
-    #                 return rating
-    #         except:
-    #             pass
-    #
-    #         return ""
-    #
-    #     except Exception as e:
-    #         print(f"⚠️ Ошибка при получении рейтинга: {e}")
-    #         return ""
+    def _get_price(self) -> str:
+        """Получает цену продукта"""
+        try:
+            if self.driver is None:
+                return ""
+
+            price = self._get_text(SELECTORS_PDP["product_price"])
+            if not price:
+                return ""
+
+            # Оставляем только цифры, точки и запятые (убираем пробелы, валюту и другие символы)
+            price_clean = re.sub(r'[^\d.,]', '', price).strip()
+
+            return price_clean if price_clean else price
+
+        except Exception as e:
+            print(f"⚠️ Не удалось получить цену: {e}")
+            return ""
 
     def _get_rating_from_review_page(self, product_url: str) -> str:
         """
@@ -394,44 +341,6 @@ class Parser:
             print(f"  ❌ Ошибка при получении страны: {e}")
             return ""
 
-
-    def _extract_country_from_text(self, text: str) -> str:
-        """Извлекает страну из текста раздела Дополнительная информация"""
-        if not text:
-            return ""
-
-        # Ищем строку "страна происхождения" и берём следующую строку
-        lines = text.split('\n')
-        for i, line in enumerate(lines):
-            if 'страна происхождения' in line.lower():
-                # Берём следующую непустую строку
-                for j in range(i + 1, min(i + 5, len(lines))):
-                    country = lines[j].strip()
-                    if country and not country.startswith('изготовитель'):
-                        # Очищаем от лишних символов
-                        country = re.sub(r'[<>\n\r\t"]', '', country)
-                        if country and len(country) < 100:
-                            return country
-                break
-
-        # Альтернативные паттерны
-        patterns = [
-            r'страна происхождения[:\s]*([^\n]+)',
-            r'страна-производитель[:\s]*([^\n]+)',
-            r'страна[:\s]*([^\n]+)',
-            r'country of origin[:\s]*([^\n]+)',
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                country = match.group(1).strip()
-                country = re.sub(r'[<>\n\r\t"]', '', country)
-                if country and len(country) < 100:
-                    return country
-
-        return ""
-
     def parse_product(self, product: Product) -> Product:
         """Парсит детальную информацию о продукте и заполняет объект Product"""
         print(f"🔍 Парсинг: {product.url}")
@@ -451,36 +360,23 @@ class Parser:
             product.name = self._get_product_name()
 
             # 2. Цена
-            price = self._get_text(SELECTORS_PDP["product_price"])
-            if price:
-                price_clean = re.sub(r'[^\d\s]', '', price).strip()
-                if price_clean:
-                    product.price = price_clean
-                else:
-                    product.price = price
+            product.price = self._get_price()
 
-            # 4. Описание
+            # 4. Описание продукта
             description = self._get_text(SELECTORS_PDP["product_description"])
             if description:
                 description = re.sub(r'\s+', ' ', description).strip()
                 product.description = description[:500] if len(description) > 500 else description
 
-            # Инструкция (с раскрытием вкладки!)
+            # 5. Инструкция по применению (с раскрытием вкладки!)
             product.instructions = self._get_instructions()
 
-            # # 4. Инструкция
-            # instructions = self._get_text_by_xpath(SELECTORS_PDP["product_instructions"])
-            # if instructions:
-            #     product.instructions = re.sub(r'\s+', ' ', instructions).strip()[:300]
-
-            # 5. Страна (с раскрытием вкладки!)
+            # 5. Страна-производитель (с раскрытием вкладки!)
             product.country = self._get_country()
 
-            # 3. Рейтинг (со страницы отзывов) ← ЗДЕСЬ ВЫЗОВ
+            # 3. Рейтинг пользователей (со страницы отзывов!)
             product.rating = self._get_rating_from_review_page(product.url)
 
-            rating_display = product.rating if product.rating else "нет"
-            print(f"  ✅ {product.name} | {product.price} ₽ | ★ {rating_display}")
             return product
 
         except Exception as e:
