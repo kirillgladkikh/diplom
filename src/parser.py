@@ -242,6 +242,14 @@ class Parser:
                     element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     rating = element.text.strip()
                     if rating and re.match(r'^\d+(\.\d+)?$', rating):
+                        # преобразуем в число для проверки
+                        rating_float = float(rating)
+                        # проверка что рейтинг не 0.0
+                        if rating_float <= 0.0:
+                            # предупреждение что 0.0 = нет отзывов
+                            logger.warning(f"Рейтинг {rating} означает отсутствие отзывов")
+                            # возвращаем "нет" вместо 0.0
+                            return "нет"
                         logger.info(f"Найден рейтинг: {rating}")
                         return rating
                 except NoSuchElementException:
