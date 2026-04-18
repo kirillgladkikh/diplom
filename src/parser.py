@@ -131,22 +131,22 @@ class Parser:
         """Получает название продукта из h1"""
         try:
             if self.driver is None:
-                return ""
+                return "нет"
             h1 = self.driver.find_element(By.CSS_SELECTOR, "h1")
             return h1.text.strip()
         except Exception as e:
             print(f"⚠️ Не удалось получить название: {e}")
-            return ""
+            return "нет"
 
     def _get_price(self) -> str:
         """Получает цену продукта"""
         try:
             if self.driver is None:
-                return ""
+                return "нет"
 
             price = self._get_text(SELECTORS_PDP["product_price"])
             if not price:
-                return ""
+                return "нет"
 
             # Оставляем только цифры, точки и запятые (убираем пробелы, валюту и другие символы)
             price_clean = re.sub(r'[^\d.,]', '', price).strip()
@@ -155,17 +155,17 @@ class Parser:
 
         except Exception as e:
             print(f"⚠️ Не удалось получить цену: {e}")
-            return ""
+            return "нет"
 
     def _get_description(self) -> str:
         """Получает описание продукта"""
         try:
             if self.driver is None:
-                return ""
+                return "нет"
 
             description = self._get_text(SELECTORS_PDP["product_description"])
             if not description:
-                return ""
+                return "нет"
 
             # Нормализуем пробелы
             description = re.sub(r'\s+', ' ', description).strip()
@@ -174,7 +174,7 @@ class Parser:
 
         except Exception as e:
             print(f"⚠️ Не удалось получить описание: {e}")
-            return ""
+            return "нет"
 
     def _get_rating_from_review_page(self, product_url: str) -> str:
         """
