@@ -132,90 +132,161 @@ class Parser:
         return default
 
     def _get_product_name(self) -> str:
-        """Получает название продукта из h1"""
         try:
             if self.driver is None:
+                logger.debug("Драйвер не инициализирован, название не получено")  # НУЖНО ДОБАВИТЬ
                 return "нет"
             h1 = self.driver.find_element(By.CSS_SELECTOR, "h1")
-            return h1.text.strip()
+            name = h1.text.strip()
+            if name:
+                logger.info(f"Найдено название: {name[:50]}{'...' if len(name) > 50 else ''}")  # НУЖНО ДОБАВИТЬ
+                return name
+            else:
+                logger.warning("Название не найдено (пустой текст)")  # НУЖНО ДОБАВИТЬ
+                return "нет"
         except Exception as e:
             logger.warning(f"Не удалось получить название: {e}")
             return "нет"
+    # def _get_product_name(self) -> str:
+    #     """Получает название продукта из h1"""
+    #     try:
+    #         if self.driver is None:
+    #             logger.debug("Драйвер не инициализирован, название не получено")  # НУЖНО ДОБАВИТЬ
+    #             return "нет"
+    #         h1 = self.driver.find_element(By.CSS_SELECTOR, "h1")
+    #         return h1.text.strip()
+    #     except Exception as e:
+    #         logger.warning(f"Не удалось получить название: {e}")
+    #         return "нет"
 
     def _get_price(self) -> str:
-        """Получает цену продукта"""
         try:
             if self.driver is None:
+                logger.debug("Драйвер не инициализирован, цена не получена")  # НУЖНО ДОБАВИТЬ
                 return "нет"
-
             price = self._get_text(SELECTORS_PDP["product_price"])
             if not price:
+                logger.warning("Цена не найдена")  # НУЖНО ДОБАВИТЬ
                 return "нет"
-
-            # Оставляем только цифры, точки и запятые (убираем пробелы, валюту и другие символы)
             price_clean = re.sub(r'[^\d.,]', '', price).strip()
-
-            return price_clean if price_clean else price
-
+            result = price_clean if price_clean else price
+            logger.info(f"Найдена цена: {result}")  # НУЖНО ДОБАВИТЬ
+            return result
         except Exception as e:
             logger.warning(f"Не удалось получить цену: {e}")
             return "нет"
+    # def _get_price(self) -> str:
+    #     """Получает цену продукта"""
+    #     try:
+    #         if self.driver is None:
+    #             return "нет"
+    #
+    #         price = self._get_text(SELECTORS_PDP["product_price"])
+    #         if not price:
+    #             return "нет"
+    #
+    #         # Оставляем только цифры, точки и запятые (убираем пробелы, валюту и другие символы)
+    #         price_clean = re.sub(r'[^\d.,]', '', price).strip()
+    #
+    #         return price_clean if price_clean else price
+    #
+    #     except Exception as e:
+    #         logger.warning(f"Не удалось получить цену: {e}")
+    #         return "нет"
 
     def _get_description(self) -> str:
-        """Получает описание продукта"""
         try:
             if self.driver is None:
+                logger.debug("Драйвер не инициализирован, описание не получено")  # НУЖНО ДОБАВИТЬ
                 return "нет"
-
             description = self._get_text(SELECTORS_PDP["product_description"])
             if not description:
+                logger.warning("Описание не найдено")  # НУЖНО ДОБАВИТЬ
                 return "нет"
-
-            # Нормализуем пробелы
             description = re.sub(r'\s+', ' ', description).strip()
-
+            logger.info(
+                f"Найдено описание: {description[:50]}{'...' if len(description) > 50 else ''}")  # НУЖНО ДОБАВИТЬ
             return description
-
         except Exception as e:
             logger.warning(f"Не удалось получить описание: {e}")
             return "нет"
+    # def _get_description(self) -> str:
+    #     """Получает описание продукта"""
+    #     try:
+    #         if self.driver is None:
+    #             return "нет"
+    #
+    #         description = self._get_text(SELECTORS_PDP["product_description"])
+    #         if not description:
+    #             return "нет"
+    #
+    #         # Нормализуем пробелы
+    #         description = re.sub(r'\s+', ' ', description).strip()
+    #
+    #         return description
+    #
+    #     except Exception as e:
+    #         logger.warning(f"Не удалось получить описание: {e}")
+    #         return "нет"
 
     def _get_rating_from_review_page(self, product_url: str) -> str:
-        """
-        Переходит на страницу отзывов и получает рейтинг товара.
-        URL отзывов формируется: /review/product/{product_id}
-        """
         try:
-            # Извлекаем ID продукта из URL
-            # URL вида: https://goldapple.ru/19000241264-rose-intense
             product_slug = product_url.split('/')[-1]
-            product_id = product_slug.split('-')[0]  # Берём первую часть до дефиса
-
-            # Формируем URL страницы отзывов
+            product_id = product_slug.split('-')[0]
             review_url = f"https://goldapple.ru/review/product/{product_id}"
             logger.debug(f"Переход на страницу отзывов: {review_url}")
-
-            # Загружаем страницу отзывов
             self.driver.get(review_url)
-            time.sleep(10)  # Небольшая задержка для загрузки
-
-            # Ищем рейтинг по селекторам из конфига
+            time.sleep(10)
             for selector in SELECTORS_REVIEW["product_rating"]:
                 try:
                     element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     rating = element.text.strip()
                     if rating and re.match(r'^\d+(\.\d+)?$', rating):
-                        logger.info(f"Найден рейтинг на странице отзывов: {rating}")
+                        logger.info(f"Найден рейтинг: {rating}")
                         return rating
                 except NoSuchElementException:
                     continue
-
-            logger.warning(f"Рейтинг не найден на странице отзывов")
-            return "нет"
-
+            logger.warning("Рейтинг не найден")
+            return "нет"  # НУЖНО ИЗМЕНИТЬ: было "" стало "нет"
         except Exception as e:
-            logger.warning(f"Ошибка при получении рейтинга со страницы отзывов: {e}")
-            return "нет"
+            logger.warning(f"Ошибка при получении рейтинга: {e}")
+            return "нет"  # НУЖНО ИЗМЕНИТЬ: было "" стало "нет"
+    # def _get_rating_from_review_page(self, product_url: str) -> str:
+    #     """
+    #     Переходит на страницу отзывов и получает рейтинг товара.
+    #     URL отзывов формируется: /review/product/{product_id}
+    #     """
+    #     try:
+    #         # Извлекаем ID продукта из URL
+    #         # URL вида: https://goldapple.ru/19000241264-rose-intense
+    #         product_slug = product_url.split('/')[-1]
+    #         product_id = product_slug.split('-')[0]  # Берём первую часть до дефиса
+    #
+    #         # Формируем URL страницы отзывов
+    #         review_url = f"https://goldapple.ru/review/product/{product_id}"
+    #         logger.debug(f"Переход на страницу отзывов: {review_url}")
+    #
+    #         # Загружаем страницу отзывов
+    #         self.driver.get(review_url)
+    #         time.sleep(10)  # Небольшая задержка для загрузки
+    #
+    #         # Ищем рейтинг по селекторам из конфига
+    #         for selector in SELECTORS_REVIEW["product_rating"]:
+    #             try:
+    #                 element = self.driver.find_element(By.CSS_SELECTOR, selector)
+    #                 rating = element.text.strip()
+    #                 if rating and re.match(r'^\d+(\.\d+)?$', rating):
+    #                     logger.info(f"Найден рейтинг на странице отзывов: {rating}")
+    #                     return rating
+    #             except NoSuchElementException:
+    #                 continue
+    #
+    #         logger.warning(f"Рейтинг не найден на странице отзывов")
+    #         return "нет"
+    #
+    #     except Exception as e:
+    #         logger.warning(f"Ошибка при получении рейтинга со страницы отзывов: {e}")
+    #         return "нет"
 
     def _get_instructions(self) -> str:
         """Получает инструкцию по применению из вкладки 'Применение'"""
