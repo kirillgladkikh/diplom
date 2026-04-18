@@ -254,62 +254,6 @@ class Parser:
             print(f"  ❌ Ошибка при получении инструкции: {e}")
             return "нет"
 
-    # def _get_country(self) -> str:
-    #     """Получает страну-производитель - комбинированный подход"""
-    #     try:
-    #         if self.driver is None:
-    #             return ""
-    #
-    #         # Кликаем по вкладке
-    #         try:
-    #             additional_tab = self.driver.find_element(
-    #                 By.XPATH,
-    #                 "//button[contains(@class, 'ga-tabs-tab')]//div[contains(text(), 'Дополнительная информация')]"
-    #             )
-    #             additional_tab.click()
-    #             time.sleep(2)
-    #             print(f"  🔘 Кликнули по вкладке 'Дополнительная информация'")
-    #         except Exception as e:
-    #             print(f"  ⚠️ Не удалось кликнуть вкладку: {e}")
-    #
-    #         # Получаем весь блок
-    #         container = self.driver.find_element(
-    #             By.XPATH,
-    #             "//div[contains(@class, 'wysiwyg') and contains(text(), 'страна происхождения')]"
-    #         )
-    #
-    #         # Способ 1: Через innerHTML и <br>
-    #         inner_html = container.get_attribute('innerHTML')
-    #         import re
-    #         parts = re.split(r'<br\s*/?>', inner_html)
-    #
-    #         for i, part in enumerate(parts):
-    #             if 'страна происхождения' in part:
-    #                 if i + 1 < len(parts):
-    #                     country = re.sub(r'<[^>]+>', '', parts[i + 1]).strip()
-    #                     if country:
-    #                         print(f"  🌍 Найдена страна (через <br>): {country}")
-    #                         return country
-    #                 break
-    #
-    #         # Способ 2: Если не сработало, пробуем через текст и переносы строк
-    #         full_text = container.text
-    #         lines = full_text.split('\n')
-    #         for i, line in enumerate(lines):
-    #             if 'страна происхождения' in line.lower():
-    #                 for j in range(i + 1, len(lines)):
-    #                     if lines[j].strip():
-    #                         country = lines[j].strip()
-    #                         print(f"  🌍 Найдена страна (через text): {country}")
-    #                         return country
-    #                         break
-    #                 break
-    #
-    #     except Exception as e:
-    #         print(f"  ⚠️ Страна не найдена: {e}")
-    #
-    #     return ""
-
     def _get_country(self) -> str:
         """Получает страну-производитель через regex"""
         try:
