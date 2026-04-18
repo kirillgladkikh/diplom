@@ -16,6 +16,10 @@ from src.config import (
     SELECTORS_PDP, OUTPUT_FILENAME, SELECTORS_REVIEW
 )
 from src.product import Product
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 class Parser:
@@ -86,13 +90,13 @@ class Parser:
                     WebDriverWait(self.driver, 10).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='ga-tabs-tab']"))
                     )
-                    print(f"  📑 Вкладки загружены")
+                    logger.debug(f"Вкладки загружены")
                 except Exception as e:
-                    print(f"  ⚠️ Вкладки не найдены: {e}")
+                    logger.debug(f"Вкладки не найдены: {e}")
 
                 return True
             except (TimeoutException, Exception) as e:
-                print(f"⚠️ Попытка {attempt + 1}/{retries} не удалась: {e}")
+                logger.warning(f"Попытка {attempt + 1}/{retries} не удалась: {e}")
                 if attempt == retries - 1:
                     return False
                 self._random_delay()
@@ -105,10 +109,10 @@ class Parser:
             if self.driver:
                 with open(filename, "w", encoding="utf-8") as f:
                     f.write(self.driver.page_source)
-                print(f"💾 HTML страницы сохранён в {filename}")
-                print(f"   Размер файла: {len(self.driver.page_source)} символов")
+                logger.debug(f"HTML страницы сохранён в {filename}")
+                logger.debug(f"Размер файла: {len(self.driver.page_source)} символов")
         except Exception as e:
-            print(f"⚠️ Ошибка при сохранении HTML: {e}")
+            logger.warning(f"Ошибка при сохранении HTML: {e}")
 
     def _get_text(self, selectors, default: str = "") -> str:
         """Пытается получить текст по одному из CSS селекторов"""
@@ -135,7 +139,7 @@ class Parser:
             h1 = self.driver.find_element(By.CSS_SELECTOR, "h1")
             return h1.text.strip()
         except Exception as e:
-            print(f"⚠️ Не удалось получить название: {e}")
+            logger.warning(f"Не удалось получить название: {e}")
             return "нет"
 
     def _get_price(self) -> str:
@@ -154,7 +158,7 @@ class Parser:
             return price_clean if price_clean else price
 
         except Exception as e:
-            print(f"⚠️ Не удалось получить цену: {e}")
+            logger.warning(f"Не удалось получить цену: {e}")
             return "нет"
 
     def _get_description(self) -> str:
@@ -173,7 +177,7 @@ class Parser:
             return description
 
         except Exception as e:
-            print(f"⚠️ Не удалось получить описание: {e}")
+            logger.warning(f"Не удалось получить описание: {e}")
             return "нет"
 
     def _get_rating_from_review_page(self, product_url: str) -> str:
@@ -189,7 +193,7 @@ class Parser:
 
             # Формируем URL страницы отзывов
             review_url = f"https://goldapple.ru/review/product/{product_id}"
-            print(f"  📝 Переход на страницу отзывов: {review_url}")
+            logger.debug(f"Переход на страницу отзывов: {review_url}")
 
             # Загружаем страницу отзывов
             self.driver.get(review_url)
@@ -201,17 +205,17 @@ class Parser:
                     element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     rating = element.text.strip()
                     if rating and re.match(r'^\d+(\.\d+)?$', rating):
-                        print(f"  ✅ Найден рейтинг на странице отзывов: {rating}")
+                        logger.info(f"Найден рейтинг на странице отзывов: {rating}")
                         return rating
                 except NoSuchElementException:
                     continue
 
-            print(f"  ⚠️ Рейтинг не найден на странице отзывов")
-            return ""
+            logger.warning(f"Рейтинг не найден на странице отзывов")
+            return "нет"
 
         except Exception as e:
-            print(f"  ⚠️ Ошибка при получении рейтинга со страницы отзывов: {e}")
-            return ""
+            logger.warning(f"Ошибка при получении рейтинга со страницы отзывов: {e}")
+            return "нет"
 
     def _get_instructions(self) -> str:
         """Получает инструкцию по применению из вкладки 'Применение'"""
@@ -227,9 +231,9 @@ class Parser:
                 )
                 apply_tab.click()
                 time.sleep(2)
-                print(f"  🔘 Кликнули по вкладке 'Применение'")
+                logger.debug(f"Кликнули по вкладке 'Применение'")
             except Exception as e:
-                print(f"  ⚠️ Вкладка 'Применение' отсутствует на странице")
+                logger.warning(f"Вкладка 'Применение' отсутствует на странице")
                 return "нет"
 
             # Получаем весь HTML страницы и ищем блок Применения
@@ -244,21 +248,21 @@ class Parser:
                 instructions = re.sub(r'<[^>]+>', '', match.group(1)).strip()
                 instructions = re.sub(r'\s+', ' ', instructions)
                 if instructions:
-                    print(f"  📝 Найдена инструкция: {instructions[:50]}...")
+                    logger.info(f"Найдена инструкция: {instructions[:50]}...")
                     return instructions
 
-            print(f"  ❌ Инструкция не найдена")
+            logger.warning(f"Инструкция не найдена")
             return "нет"
 
         except Exception as e:
-            print(f"  ❌ Ошибка при получении инструкции: {e}")
+            logger.error(f"Ошибка при получении инструкции: {e}")
             return "нет"
 
     def _get_country(self) -> str:
         """Получает страну-производитель через regex"""
         try:
             if self.driver is None:
-                return ""
+                return "нет"
 
             # Кликаем по вкладке
             try:
@@ -268,10 +272,10 @@ class Parser:
                 )
                 additional_tab.click()
                 time.sleep(2)
-                print(f"  🔘 Кликнули по вкладке 'Дополнительная информация'")
+                logger.debug(f"Кликнули по вкладке 'Дополнительная информация'")
             except Exception as e:
-                print(f"  ⚠️ Не удалось кликнуть вкладку: {e}")
-                return ""
+                logger.warning(f"Не удалось кликнуть вкладку: {e}")
+                return "нет"
 
             # Получаем HTML и ищем страну
             page_source = self.driver.page_source
@@ -283,7 +287,7 @@ class Parser:
 
             if match:
                 country = match.group(1).strip()
-                print(f"  🌍 Найдена страна (через regex): {country}")
+                logger.info(f"Найдена страна: {country}")
                 return country
 
             # Альтернативный паттерн: страна происхождения\nСТРАНА
@@ -292,29 +296,29 @@ class Parser:
 
             if match2:
                 country = match2.group(1).strip()
-                print(f"  🌍 Найдена страна (через regex2): {country}")
+                logger.info(f"Найдена страна (через regex2): {country}")
                 return country
 
-            return ""
+            return "нет"
 
         except Exception as e:
-            print(f"  ❌ Ошибка при получении страны: {e}")
-            return ""
+            logger.error(f"Ошибка при получении страны: {e}")
+            return "нет"
 
     def parse_product(self, product: Product) -> Product:
         """Парсит детальную информацию о продукте и заполняет объект Product"""
-        print(f"🔍 Парсинг: {product.url}")
+        logger.info(f"Парсинг: {product.url}")
 
         try:
             if not self._safe_get(product.url):
-                print(f"❌ Не удалось загрузить страницу: {product.url}")
+                logger.error(f"Не удалось загрузить страницу: {product.url}")
                 return product
 
             # # ОТЛАДКА: сохраняем HTML страницы
             # filename = f"debug_{product.url.split('/')[-1]}.html"
             # with open(filename, "w", encoding="utf-8") as f:
             #     f.write(self.driver.page_source)
-            # print(f"💾 Сохранён HTML: {filename}")
+            # logger.info(f"Сохранён HTML: {filename}")
 
             # 1. Название (из h1)
             product.name = self._get_product_name()
@@ -337,7 +341,7 @@ class Parser:
             return product
 
         except Exception as e:
-            print(f"❌ Ошибка при парсинге {product.url}: {e}")
+            logger.error(f"Ошибка при парсинге {product.url}: {e}")
             return product
 
     def load_products_from_csv(self) -> List[Product]:
@@ -345,7 +349,7 @@ class Parser:
         products: List[Product] = []
 
         if not os.path.exists(self.input_path):
-            print(f"❌ Файл не найден: {self.input_path}")
+            logger.error(f"Файл не найден: {self.input_path}")
             return products
 
         with open(self.input_path, 'r', encoding='utf-8-sig') as csvfile:
@@ -367,7 +371,7 @@ class Parser:
                 )
                 products.append(product)
 
-        print(f"📂 Загружено {len(products)} продуктов из {self.input_path}")
+        logger.info(f"Загружено {len(products)} продуктов из {self.input_path}")
         return products
 
     def save_products_to_csv(self, products: List[Product]) -> None:
@@ -378,7 +382,7 @@ class Parser:
             for product in products:
                 writer.writerow(product.to_dict())
 
-        print(f"💾 Сохранено {len(products)} продуктов в {self.input_path}")
+        logger.info(f"Сохранено {len(products)} продуктов в {self.input_path}")
 
     def parse_all(self, start_from: int = 0, limit: Optional[int] = None) -> None:
         """Парсит все продукты из CSV файла"""
@@ -386,11 +390,11 @@ class Parser:
         total = len(products)
 
         if total == 0:
-            print("⚠️ Нет продуктов для парсинга")
+            logger.warning("Нет продуктов для парсинга")
             return
 
         if start_from >= total:
-            print(f"⚠️ start_from={start_from} превышает общее количество продуктов={total}")
+            logger.warning(f"start_from={start_from} превышает общее количество продуктов={total}")
             return
 
         start_idx = start_from
@@ -399,17 +403,17 @@ class Parser:
         else:
             end_idx = total
 
-        print(f"📊 Начинаем парсинг {end_idx - start_idx} продуктов (с {start_idx} по {end_idx - 1} из {total})")
+        logger.info(f"Начинаем парсинг {end_idx - start_idx} продуктов (с {start_idx} по {end_idx - 1} из {total})")
 
         self.driver = self._init_driver()
 
         try:
             for i in range(start_idx, end_idx):
                 product = products[i]
-                print(f"📦 Прогресс: {i + 1}/{total}")
+                logger.info(f"Прогресс: {i + 1}/{total}")
 
                 if not product.url:
-                    print(f"⚠️ Продукт {i + 1} не имеет URL, пропускаем")
+                    logger.warning(f"Продукт {i + 1} не имеет URL, пропускаем")
                     continue
 
                 parsed_product = self.parse_product(product)
@@ -420,7 +424,7 @@ class Parser:
             if self.driver:
                 self.driver.quit()
 
-        print(f"✅ Парсинг завершён! Обработано {end_idx - start_idx} продуктов")
+        logger.info(f"Парсинг завершён! Обработано {end_idx - start_idx} продуктов")
 
     def parse_missing_only(self) -> None:
         """Парсит только те продукты, у которых отсутствуют данные"""
@@ -432,19 +436,19 @@ class Parser:
                 missing_indices.append(i)
 
         if not missing_indices:
-            print("✅ Нет продуктов с отсутствующими данными")
+            logger.info("Нет продуктов с отсутствующими данными")
             return
 
-        print(f"📊 Найдено {len(missing_indices)} продуктов с отсутствующими данными")
+        logger.info(f"Найдено {len(missing_indices)} продуктов с отсутствующими данными")
 
         self.driver = self._init_driver()
 
         try:
             for i in missing_indices:
-                print(f"📦 Парсинг пропущенного продукта {i + 1}/{len(products)}")
+                logger.info(f"Парсинг пропущенного продукта {i + 1}/{len(products)}")
 
                 if not products[i].url:
-                    print(f"⚠️ Продукт {i + 1} не имеет URL, пропускаем")
+                    logger.warning(f"Продукт {i + 1} не имеет URL, пропускаем")
                     continue
 
                 parsed_product = self.parse_product(products[i])
