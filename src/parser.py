@@ -170,8 +170,7 @@ class Parser:
             # Нормализуем пробелы
             description = re.sub(r'\s+', ' ', description).strip()
 
-            # Обрезаем до 500 символов если нужно
-            return description[:500] if len(description) > 500 else description
+            return description
 
         except Exception as e:
             print(f"⚠️ Не удалось получить описание: {e}")
