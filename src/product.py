@@ -24,11 +24,11 @@ class Product:
     def to_dict(self):
         """Конвертирует в словарь для CSV (порядок соответствует CSV_HEADERS)"""
         return {
-            "Ссылка на продукт": self.url or "",
-            "Наименование": self.name or "",
-            "Цена": self.price or "",
-            "Рейтинг пользователей": self.rating or "",
-            "Описание продукта": self.description or "",
-            "Инструкция по применению": self.instructions or "",
-            "Страна-производитель": self.country or ""
+            "Ссылка на продукт": self.url or "нет",
+            "Наименование": self.name or "нет",
+            "Цена": self.price or "нет",
+            "Рейтинг пользователей": self.rating or "нет",
+            "Описание продукта": self.description or "нет",
+            "Инструкция по применению": self.instructions or "нет",
+            "Страна-производитель": self.country or "нет"
         }
