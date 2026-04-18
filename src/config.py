@@ -1,14 +1,17 @@
 """Конфигурация парсера - селекторы и настройки"""
 
-# Базовые URL
-BASE_URL = "https://goldapple.ru/parfjumerija"  # РАЗДЕЛ САЙТА ДЛЯ ПАРСИНГА
-OUTPUT_FILENAME = "goldapple_perfumes.csv"  # Имя выходного CSV-файла
+# Базовые настройки
+BASE_URL = "https://goldapple.ru/parfjumerija"       # РАЗДЕЛ САЙТА ДЛЯ ПАРСИНГА
+OUTPUT_FILENAME = "goldapple_perfumes.csv"           # Имя выходного CSV-файла
+CRAWLER_CHECKPOINT_FILE = "crawler_checkpoint.json"  # Файл для сохранения прогресса
+CRAWLER_SAVE_EVERY_PAGES = 10                        # Сохранять после каждых N страниц
 
 # Настройки парсинга
 TEST_MODE = True             # Установить False для полной пагинации
 TEST_MODE_PAGES = 2          # Установить количество страниц для тестовой пагинации (увеличьте для отладки отбоя сервером)
-DEFAULT_MAX_PAGES = 500      # Количество страниц принудительного прерывания пагинации
+DEFAULT_MAX_PAGES = 2000      # Количество страниц принудительного прерывания пагинации
 MAX_CRAWLER_ATTEMPTS = 10    # Максимум попыток собрать ссылки
+
 
 # Настройки задержек (в секундах)
 REQUEST_DELAY_MIN = 2.0      # 2 секунды между запросами на странице
