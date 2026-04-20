@@ -5,11 +5,12 @@ BASE_URL = "https://goldapple.ru/parfjumerija"       # РАЗДЕЛ САЙТА �
 OUTPUT_FILENAME = "goldapple_perfumes.csv"           # Имя выходного CSV-файла
 CRAWLER_CHECKPOINT_FILE = "crawler_checkpoint.json"  # Файл для сохранения прогресса
 CRAWLER_SAVE_EVERY_PAGES = 10                        # Сохранять после каждых N страниц
+MAX_EMPTY_PAGES = 3                                  # Сколько пустых страниц подряд считать концом каталога
 
 # Настройки парсинга
-TEST_MODE = True             # Установить False для полной пагинации
-TEST_MODE_PAGES = 2          # Установить количество страниц для тестовой пагинации (увеличьте для отладки отбоя сервером)
-DEFAULT_MAX_PAGES = 2000      # Количество страниц принудительного прерывания пагинации
+TEST_MODE = False             # Установить False для полной пагинации
+TEST_MODE_PAGES = 5          # Установить количество страниц для тестовой пагинации (увеличьте для отладки отбоя сервером)
+DEFAULT_MAX_PAGES = 3000     # Количество страниц принудительного прерывания пагинации
 MAX_CRAWLER_ATTEMPTS = 10    # Максимум попыток собрать ссылки
 
 
