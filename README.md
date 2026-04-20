@@ -18,3 +18,12 @@
 2. Установите зависимости: `pip install -r requirements.txt`
 3. Создайте виртуальное окружение (рекомендуется): `python -m venv venv`
 4. Активируйте окружение: `source venv/bin/activate` (Linux/Mac) или `venv\Scripts\
+
+Теперь проект можно запускать на любом компьютере через:
+```
+powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
