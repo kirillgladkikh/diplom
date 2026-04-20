@@ -1,13 +1,6 @@
-import os
-import json
-import pytest
 import src.crawler as crawler_module  # Импортируем модуль целиком
-from src.crawler import Crawler
-from src.config import CRAWLER_CHECKPOINT_FILE
-import pytest
 from unittest.mock import Mock, patch, MagicMock
 from src.crawler import Crawler
-from src.config import MAX_EMPTY_PAGES
 
 
 class TestCrawler:
