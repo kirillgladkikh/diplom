@@ -1,6 +1,8 @@
 import os
 import tempfile
+
 import pytest
+
 from src.exporter import CSVExporter
 from src.product import Product
 

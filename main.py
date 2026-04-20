@@ -1,11 +1,12 @@
-import os
-import time
-import random
 import logging
+import os
+import random
+import time
+
+from src.config import MAX_CRAWLER_ATTEMPTS, OUTPUT_FILENAME, RETRY_DELAY_MAX, RETRY_DELAY_MIN, TEST_MODE
 from src.crawler import Crawler, check_and_get_resume_status
 from src.exporter import CSVExporter
 from src.parser import Parser
-from src.config import OUTPUT_FILENAME, TEST_MODE, RETRY_DELAY_MIN, RETRY_DELAY_MAX, MAX_CRAWLER_ATTEMPTS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

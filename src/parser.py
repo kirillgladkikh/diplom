@@ -1,26 +1,21 @@
+import csv
+import logging
 import os
-import time
 import random
 import re
-import csv
+import time
 from typing import List, Optional
+
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
 
-from src.config import (
-    REQUEST_DELAY_MIN,
-    REQUEST_DELAY_MAX,
-    RETRY_COUNT,
-    SELECTORS_PDP,
-    OUTPUT_FILENAME,
-    SELECTORS_REVIEW,
-)
+from src.config import (OUTPUT_FILENAME, REQUEST_DELAY_MAX, REQUEST_DELAY_MIN, RETRY_COUNT, SELECTORS_PDP,
+                        SELECTORS_REVIEW)
 from src.product import Product
-import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

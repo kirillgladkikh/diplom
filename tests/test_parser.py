@@ -1,11 +1,10 @@
+import csv
 import os
 import tempfile
-import csv
+from unittest.mock import MagicMock, Mock, patch
 
 from src.parser import Parser
 from src.product import Product
-
-from unittest.mock import Mock, patch, MagicMock
 
 
 class TestParser:

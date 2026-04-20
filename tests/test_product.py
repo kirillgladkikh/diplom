@@ -1,4 +1,5 @@
 import pytest
+
 from src.product import Product
 
 

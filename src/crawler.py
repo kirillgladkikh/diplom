@@ -1,34 +1,20 @@
+import json
+import logging
 import os
-import time
 import random
 import re
-import logging
-import json
+import time
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
 
-from src.config import (
-    BASE_URL,
-    TEST_MODE,
-    TEST_MODE_PAGES,
-    DEFAULT_MAX_PAGES,
-    REQUEST_DELAY_MIN,
-    REQUEST_DELAY_MAX,
-    PAGE_DELAY_MIN,
-    PAGE_DELAY_MAX,
-    RETRY_DELAY_MIN,
-    RETRY_DELAY_MAX,
-    RETRY_COUNT,
-    SELECTORS_PLP,
-    CRAWLER_CHECKPOINT_FILE,
-    CRAWLER_SAVE_EVERY_PAGES,
-    MAX_EMPTY_PAGES,
-)
+from src.config import (BASE_URL, CRAWLER_CHECKPOINT_FILE, CRAWLER_SAVE_EVERY_PAGES, DEFAULT_MAX_PAGES,
+                        MAX_EMPTY_PAGES, PAGE_DELAY_MAX, PAGE_DELAY_MIN, REQUEST_DELAY_MAX, REQUEST_DELAY_MIN,
+                        RETRY_COUNT, RETRY_DELAY_MAX, RETRY_DELAY_MIN, SELECTORS_PLP, TEST_MODE, TEST_MODE_PAGES)
 from src.product import Product
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
