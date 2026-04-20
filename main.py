@@ -28,17 +28,6 @@ def main():
     # - resume=True: продолжить с последней сохранённой страницы
     # - resume=False: начать сбор заново (удалив временные файлы)
     products = crawler.get_products(resume=resume)
-    # # Шаг 1: Собираем ссылки на все продукты
-    # logger.info("1. Сбор ссылок на продукты...")
-    # crawler = Crawler()
-    # # Передаём параметр resume в crawler
-    # # - resume=True: продолжить с последней сохранённой страницы
-    # # - resume=False: начать сбор заново (удалив временные файлы)
-    # products = crawler.collect_all_links(resume=resume)
-    # # # Шаг 1: Собираем ссылки на все продукты
-    # # logger.info("1. Сбор ссылок на продукты...")
-    # # crawler = Crawler()
-    # # products = crawler.get_products(resume=resume)
 
     # Шаг 2: Сохраняем ссылки в CSV
     logger.info("2. Сохранение ссылок в CSV...")
