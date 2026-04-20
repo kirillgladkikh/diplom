@@ -1,9 +1,7 @@
 import logging
 import os
-import random
-import time
 
-from src.config import MAX_CRAWLER_ATTEMPTS, OUTPUT_FILENAME, RETRY_DELAY_MAX, RETRY_DELAY_MIN, TEST_MODE
+from src.config import OUTPUT_FILENAME, TEST_MODE
 from src.crawler import Crawler, check_and_get_resume_status
 from src.exporter import CSVExporter
 from src.parser import Parser

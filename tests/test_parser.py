@@ -1,7 +1,7 @@
 import csv
 import os
 import tempfile
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 from src.parser import Parser
 from src.product import Product

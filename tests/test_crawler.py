@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import src.crawler as crawler_module  # Импортируем модуль целиком
 from src.crawler import Crawler
