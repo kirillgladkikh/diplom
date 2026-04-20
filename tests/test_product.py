@@ -14,7 +14,7 @@ class TestProduct:
             rating="4.5",
             description="Test description",
             instructions="Test instructions",
-            country="France"
+            country="France",
         )
 
         assert product.url == "https://goldapple.ru/123-product"
@@ -54,7 +54,7 @@ class TestProduct:
             rating="5",
             description="Desc",
             instructions="Instr",
-            country="Russia"
+            country="Russia",
         )
 
         result = product.to_dict()
@@ -90,6 +90,6 @@ class TestProduct:
             "Рейтинг пользователей",
             "Описание продукта",
             "Инструкция по применению",
-            "Страна-производитель"
+            "Страна-производитель",
         ]
         assert len(Product.CSV_HEADERS) == 7

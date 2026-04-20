@@ -26,7 +26,7 @@ class TestParser:
     def test_load_products_from_csv_empty(self):
         """Тест: загрузка из пустого CSV"""
         # Создаем пустой CSV с заголовками
-        with open(self.test_csv, 'w', encoding='utf-8-sig') as f:
+        with open(self.test_csv, "w", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=Product.CSV_HEADERS)
             writer.writeheader()
 
@@ -39,18 +39,20 @@ class TestParser:
     def test_load_products_from_csv_with_data(self):
         """Тест: загрузка из CSV с данными"""
         # Создаем CSV с данными
-        with open(self.test_csv, 'w', encoding='utf-8-sig', newline='') as f:
+        with open(self.test_csv, "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=Product.CSV_HEADERS)
             writer.writeheader()
-            writer.writerow({
-                "Ссылка на продукт": "https://test.ru/1",
-                "Наименование": "Test Product",
-                "Цена": "1000",
-                "Рейтинг пользователей": "4.5",
-                "Описание продукта": "Test desc",
-                "Инструкция по применению": "Test instr",
-                "Страна-производитель": "France"
-            })
+            writer.writerow(
+                {
+                    "Ссылка на продукт": "https://test.ru/1",
+                    "Наименование": "Test Product",
+                    "Цена": "1000",
+                    "Рейтинг пользователей": "4.5",
+                    "Описание продукта": "Test desc",
+                    "Инструкция по применению": "Test instr",
+                    "Страна-производитель": "France",
+                }
+            )
 
         parser = Parser("test_products.csv", self.temp_dir)
         parser.input_path = self.test_csv
@@ -79,7 +81,7 @@ class TestParser:
                 rating="4",
                 description="Desc 1",
                 instructions="Instr 1",
-                country="Russia"
+                country="Russia",
             ),
             Product(
                 url="https://test.ru/2",
@@ -88,8 +90,8 @@ class TestParser:
                 rating="5",
                 description="Desc 2",
                 instructions="Instr 2",
-                country="USA"
-            )
+                country="USA",
+            ),
         ]
 
         parser = Parser("test_products.csv", self.temp_dir)
@@ -190,7 +192,7 @@ class TestParser:
         parser.restart_driver()
         # Драйвер должен быть None, так как _init_driver требует selenium
         # В тестовой среде без selenium он упадёт, но мы не проверяем результат
-        assert hasattr(parser, 'restart_driver')
+        assert hasattr(parser, "restart_driver")
 
     def setup_method(self):
         """Создаем временную директорию для тестов"""
@@ -201,7 +203,7 @@ class TestParser:
         """Тест: _init_driver создает драйвер"""
         parser = Parser("test.csv", self.temp_dir)
 
-        with patch('src.parser.webdriver.Chrome') as mock_chrome:
+        with patch("src.parser.webdriver.Chrome") as mock_chrome:
             mock_driver = Mock()
             mock_chrome.return_value = mock_driver
 
@@ -215,6 +217,7 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
 
         import time
+
         start = time.time()
         parser._random_delay()
         elapsed = time.time() - start
@@ -226,7 +229,7 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
         parser.driver = None
 
-        with patch.object(parser, '_init_driver', return_value=Mock()):
+        with patch.object(parser, "_init_driver", return_value=Mock()):
             parser.restart_driver()
 
             # Просто проверяем что не упало
@@ -238,9 +241,10 @@ class TestParser:
         parser.driver = Mock()
 
         from selenium.common.exceptions import TimeoutException
+
         parser.driver.get.side_effect = TimeoutException("Timeout")
 
-        with patch('src.parser.WebDriverWait', side_effect=TimeoutException):
+        with patch("src.parser.WebDriverWait", side_effect=TimeoutException):
             result = parser._safe_get("https://test.ru")
 
             assert result is False
@@ -261,8 +265,8 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
         parser.driver = Mock()
 
-        with patch('src.parser.WebDriverWait'):
-            with patch('time.sleep'):
+        with patch("src.parser.WebDriverWait"):
+            with patch("time.sleep"):
                 result = parser._safe_get("https://test.ru")
 
                 assert result is True
@@ -274,7 +278,7 @@ class TestParser:
         parser.driver = Mock()
         parser.driver.page_source = "<html><body>Test</body></html>"
 
-        with patch('builtins.open', create=True) as mock_open:
+        with patch("builtins.open", create=True) as mock_open:
             parser.debug_save_page_source("test_debug.html")
             mock_open.assert_called()
 
@@ -283,7 +287,7 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
         parser.driver = None
 
-        with patch('src.parser.logger') as mock_logger:
+        with patch("src.parser.logger") as mock_logger:
             parser.debug_save_page_source("test.html")
             assert True
 
@@ -302,14 +306,12 @@ class TestParser:
 
         # Первый селектор не найден, второй найден
         from selenium.common.exceptions import NoSuchElementException
+
         element_mock = Mock()
         element_mock.text.strip.return_value = "Found text"
 
         # Первый вызов вызывает исключение, второй возвращает элемент
-        parser.driver.find_element.side_effect = [
-            NoSuchElementException("Not found"),
-            element_mock
-        ]
+        parser.driver.find_element.side_effect = [NoSuchElementException("Not found"), element_mock]
 
         result = parser._get_text([".sel1", ".sel2"])
         assert result == "Found text"
@@ -320,6 +322,7 @@ class TestParser:
         parser.driver = Mock()
 
         from selenium.common.exceptions import NoSuchElementException
+
         parser.driver.find_element.side_effect = NoSuchElementException("Not found")
 
         result = parser._get_text([".sel1", ".sel2", ".sel3"])
@@ -344,7 +347,7 @@ class TestParser:
 
         parser.driver.find_element.side_effect = Exception("Element not found")
 
-        with patch('src.parser.logger'):
+        with patch("src.parser.logger"):
             result = parser._get_product_name()
             assert result == "нет"
 
@@ -353,7 +356,7 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
         parser.driver = Mock()
 
-        with patch.object(parser, '_get_text', return_value="1 999 ₽"):
+        with patch.object(parser, "_get_text", return_value="1 999 ₽"):
             result = parser._get_price()
             assert result == "1999"  # Должны остаться только цифры
 
@@ -362,7 +365,7 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
         parser.driver = Mock()
 
-        with patch.object(parser, '_get_text', return_value="1 999,50 ₽"):
+        with patch.object(parser, "_get_text", return_value="1 999,50 ₽"):
             result = parser._get_price()
             assert "1999" in result  # Может быть "1999,50" или "1999.50"
 
@@ -379,7 +382,7 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
         parser.driver = Mock()
 
-        with patch.object(parser, '_get_text', return_value="This is a long description with multiple spaces."):
+        with patch.object(parser, "_get_text", return_value="This is a long description with multiple spaces."):
             result = parser._get_description()
             assert "multiple" in result
 
@@ -388,7 +391,7 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
         parser.driver = Mock()
 
-        with patch.object(parser, '_get_text', return_value="This   has    many     spaces"):
+        with patch.object(parser, "_get_text", return_value="This   has    many     spaces"):
             result = parser._get_description()
             assert "  " not in result  # Не должно быть двойных пробелов
 
@@ -414,13 +417,13 @@ class TestParser:
         parser.driver = Mock()
 
         # Мокаем все методы получения данных
-        with patch.object(parser, '_safe_get', return_value=True):
-            with patch.object(parser, '_get_product_name', return_value="Test Product"):
-                with patch.object(parser, '_get_price', return_value="1999"):
-                    with patch.object(parser, '_get_description', return_value="Test description"):
-                        with patch.object(parser, '_get_instructions', return_value="Test instructions"):
-                            with patch.object(parser, '_get_country', return_value="France"):
-                                with patch.object(parser, '_get_rating_from_review_page', return_value="4.5"):
+        with patch.object(parser, "_safe_get", return_value=True):
+            with patch.object(parser, "_get_product_name", return_value="Test Product"):
+                with patch.object(parser, "_get_price", return_value="1999"):
+                    with patch.object(parser, "_get_description", return_value="Test description"):
+                        with patch.object(parser, "_get_instructions", return_value="Test instructions"):
+                            with patch.object(parser, "_get_country", return_value="France"):
+                                with patch.object(parser, "_get_rating_from_review_page", return_value="4.5"):
                                     product = Product(url="https://test.ru/123")
                                     result = parser.parse_product(product)
 
@@ -435,7 +438,7 @@ class TestParser:
         """Тест: парсинг когда не удалось загрузить страницу"""
         parser = Parser("test.csv", self.temp_dir)
 
-        with patch.object(parser, '_safe_get', return_value=False):
+        with patch.object(parser, "_safe_get", return_value=False):
             product = Product(url="https://test.ru/123", name="Old Name")
             result = parser.parse_product(product)
 
@@ -444,14 +447,10 @@ class TestParser:
 
     def test_load_products_from_csv_with_empty_url(self):
         """Тест: загрузка продуктов с пустым URL"""
-        with open(self.test_csv, 'w', encoding='utf-8-sig', newline='') as f:
+        with open(self.test_csv, "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=Product.CSV_HEADERS)
             writer.writeheader()
-            writer.writerow({
-                "Ссылка на продукт": "",
-                "Наименование": "Test",
-                "Цена": "100"
-            })
+            writer.writerow({"Ссылка на продукт": "", "Наименование": "Test", "Цена": "100"})
 
         parser = Parser("test.csv", self.temp_dir)
         parser.input_path = self.test_csv
@@ -462,16 +461,13 @@ class TestParser:
     def test_parse_all_with_limit(self):
         """Тест: парсинг с ограничением количества"""
         # Создаем тестовые продукты
-        products = [
-            Product(url=f"https://test.ru/{i}", name=f"Product {i}")
-            for i in range(10)
-        ]
+        products = [Product(url=f"https://test.ru/{i}", name=f"Product {i}") for i in range(10)]
 
         parser = Parser("test.csv", self.temp_dir)
         parser.input_path = self.test_csv
         parser.save_products_to_csv(products)
 
-        with patch.object(parser, 'parse_product', return_value=products[0]):
+        with patch.object(parser, "parse_product", return_value=products[0]):
             parser.parse_all(start_from=2, limit=3)
 
             # Проверяем что файл обновлен (сохранение вызывалось)
@@ -481,8 +477,8 @@ class TestParser:
         """Тест: парсинг с start_from больше чем продуктов"""
         parser = Parser("test.csv", self.temp_dir)
 
-        with patch.object(parser, 'load_products_from_csv', return_value=[Product(url="test")]):
-            with patch('src.parser.logger') as mock_logger:
+        with patch.object(parser, "load_products_from_csv", return_value=[Product(url="test")]):
+            with patch("src.parser.logger") as mock_logger:
                 parser.parse_all(start_from=10)
                 mock_logger.warning.assert_called()
 
@@ -498,7 +494,7 @@ class TestParser:
         parser.input_path = self.test_csv
         parser.save_products_to_csv(products)
 
-        with patch.object(parser, 'parse_product', side_effect=lambda p: p):
+        with patch.object(parser, "parse_product", side_effect=lambda p: p):
             parser.parse_missing_only()
 
             # Файл должен быть обновлен
@@ -515,7 +511,7 @@ class TestParser:
         parser.input_path = self.test_csv
         parser.save_products_to_csv(products)
 
-        with patch('src.parser.logger') as mock_logger:
+        with patch("src.parser.logger") as mock_logger:
             parser.parse_missing_only()
             mock_logger.info.assert_called_with("Нет продуктов с отсутствующими данными")
 
@@ -525,7 +521,7 @@ class TestParser:
         parser.driver = Mock()
         parser.driver.page_source = "<html><body>Test</body></html>"
 
-        with patch('builtins.open', create=True) as mock_open:
+        with patch("builtins.open", create=True) as mock_open:
             # Настраиваем мок для файла
             mock_file = Mock()
             mock_open.return_value.__enter__.return_value = mock_file
@@ -544,8 +540,8 @@ class TestParser:
         parser.driver = Mock()
         parser.driver.page_source = "<html><body>Test</body></html>"
 
-        with patch('builtins.open', side_effect=Exception("Write error")):
-            with patch('src.parser.logger') as mock_logger:
+        with patch("builtins.open", side_effect=Exception("Write error")):
+            with patch("src.parser.logger") as mock_logger:
                 parser.debug_save_page_source("test_debug.html")
                 # Должно быть предупреждение об ошибке
                 mock_logger.warning.assert_called_once()
@@ -562,12 +558,12 @@ class TestParser:
         parser.driver.find_element.return_value = tab_mock
 
         # Мокаем page_source с инструкцией
-        parser.driver.page_source = '''
+        parser.driver.page_source = """
         <div text="Применение"></div>
         <div class="_ga-pdp-wysiwyg_rmnt6_55">Apply product daily</div>
-        '''
+        """
 
-        with patch('time.sleep'):
+        with patch("time.sleep"):
             result = parser._get_instructions()
             assert result == "Apply product daily"
 
@@ -577,9 +573,10 @@ class TestParser:
         parser.driver = Mock()
 
         from selenium.common.exceptions import NoSuchElementException
+
         parser.driver.find_element.side_effect = NoSuchElementException("Tab not found")
 
-        with patch('src.parser.logger') as mock_logger:
+        with patch("src.parser.logger") as mock_logger:
             result = parser._get_instructions()
             assert result == "нет"
 
@@ -593,9 +590,9 @@ class TestParser:
         parser.driver.find_element.return_value = tab_mock
 
         # Мокаем page_source со страной
-        parser.driver.page_source = 'страна происхождения<br>France<br>'
+        parser.driver.page_source = "страна происхождения<br>France<br>"
 
-        with patch('time.sleep'):
+        with patch("time.sleep"):
             result = parser._get_country()
             assert result == "France"
 
@@ -609,9 +606,9 @@ class TestParser:
         parser.driver.find_element.return_value = tab_mock
 
         # Мокаем page_source с переносом строки
-        parser.driver.page_source = 'страна происхождения\nItaly\n'
+        parser.driver.page_source = "страна происхождения\nItaly\n"
 
-        with patch('time.sleep'):
+        with patch("time.sleep"):
             result = parser._get_country()
             assert result == "Italy"
 
@@ -621,9 +618,10 @@ class TestParser:
         parser.driver = Mock()
 
         from selenium.common.exceptions import NoSuchElementException
+
         parser.driver.find_element.side_effect = NoSuchElementException("Tab not found")
 
-        with patch('src.parser.logger') as mock_logger:
+        with patch("src.parser.logger") as mock_logger:
             result = parser._get_country()
             assert result == "нет"
 
@@ -637,7 +635,7 @@ class TestParser:
         rating_mock.text.strip.return_value = "4.5"
         parser.driver.find_element.return_value = rating_mock
 
-        with patch('time.sleep'):
+        with patch("time.sleep"):
             result = parser._get_rating_from_review_page("https://goldapple.ru/123-product")
             assert result == "4.5"
 
@@ -651,8 +649,8 @@ class TestParser:
         rating_mock.text.strip.return_value = "0.0"
         parser.driver.find_element.return_value = rating_mock
 
-        with patch('time.sleep'):
-            with patch('src.parser.logger') as mock_logger:
+        with patch("time.sleep"):
+            with patch("src.parser.logger") as mock_logger:
                 result = parser._get_rating_from_review_page("https://goldapple.ru/123-product")
                 assert result == "нет"
 
@@ -662,9 +660,10 @@ class TestParser:
         parser.driver = Mock()
 
         from selenium.common.exceptions import NoSuchElementException
+
         parser.driver.find_element.side_effect = NoSuchElementException("Rating not found")
 
-        with patch('time.sleep'):
+        with patch("time.sleep"):
             result = parser._get_rating_from_review_page("https://goldapple.ru/123-product")
             assert result == "нет"
 
@@ -675,16 +674,13 @@ class TestParser:
 
         parser.driver.get.side_effect = Exception("Connection error")
 
-        with patch('src.parser.logger'):
+        with patch("src.parser.logger"):
             result = parser._get_rating_from_review_page("https://goldapple.ru/123-product")
             assert result == "нет"
 
     def test_parse_all_with_resume_after_interrupt(self):
         """Тест: parse_all с продолжением после прерывания"""
-        products = [
-            Product(url=f"https://test.ru/{i}", name=f"Product {i}")
-            for i in range(5)
-        ]
+        products = [Product(url=f"https://test.ru/{i}", name=f"Product {i}") for i in range(5)]
 
         parser = Parser("test.csv", self.temp_dir)
         parser.input_path = self.test_csv
@@ -697,17 +693,14 @@ class TestParser:
             parse_calls.append(product)
             return product
 
-        with patch.object(parser, 'parse_product', side_effect=mock_parse):
-            with patch('src.parser.logger'):
+        with patch.object(parser, "parse_product", side_effect=mock_parse):
+            with patch("src.parser.logger"):
                 parser.parse_all(start_from=2)
                 assert len(parse_calls) == 3  # Продукты 2,3,4
 
     def test_parse_all_with_limit_and_start(self):
         """Тест: parse_all с limit и start_from"""
-        products = [
-            Product(url=f"https://test.ru/{i}", name=f"Product {i}")
-            for i in range(10)
-        ]
+        products = [Product(url=f"https://test.ru/{i}", name=f"Product {i}") for i in range(10)]
 
         parser = Parser("test.csv", self.temp_dir)
         parser.input_path = self.test_csv
@@ -719,7 +712,7 @@ class TestParser:
             parse_calls.append(product)
             return product
 
-        with patch.object(parser, 'parse_product', side_effect=mock_parse):
+        with patch.object(parser, "parse_product", side_effect=mock_parse):
             parser.parse_all(start_from=3, limit=4)
             # Должны быть обработаны продукты 3,4,5,6
             assert len(parse_calls) == 4
@@ -736,7 +729,7 @@ class TestParser:
                 rating="4.8",
                 description="Original desc",
                 instructions="Original instr",
-                country="Germany"
+                country="Germany",
             )
         ]
 
@@ -771,6 +764,6 @@ class TestParser:
         parser = Parser("test.csv", self.temp_dir)
         parser.driver = Mock()
 
-        with patch.object(parser, '_get_text', return_value="Бесплатно"):
+        with patch.object(parser, "_get_text", return_value="Бесплатно"):
             result = parser._get_price()
             assert result == "Бесплатно"

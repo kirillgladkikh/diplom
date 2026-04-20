@@ -7,8 +7,7 @@ from src.exporter import CSVExporter
 from src.parser import Parser
 from src.config import OUTPUT_FILENAME, TEST_MODE, RETRY_DELAY_MIN, RETRY_DELAY_MAX, MAX_CRAWLER_ATTEMPTS
 
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 

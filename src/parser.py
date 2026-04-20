@@ -12,13 +12,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 from src.config import (
-    REQUEST_DELAY_MIN, REQUEST_DELAY_MAX, RETRY_COUNT,
-    SELECTORS_PDP, OUTPUT_FILENAME, SELECTORS_REVIEW
+    REQUEST_DELAY_MIN,
+    REQUEST_DELAY_MAX,
+    RETRY_COUNT,
+    SELECTORS_PDP,
+    OUTPUT_FILENAME,
+    SELECTORS_REVIEW,
 )
 from src.product import Product
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -70,9 +74,7 @@ class Parser:
                 self.driver.get(url)
 
                 # Ждём загрузки body
-                WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "body"))
-                )
+                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
                 # Дополнительная задержка для динамического контента (3 секунды)
                 time.sleep(3)
@@ -157,7 +159,7 @@ class Parser:
             if not price:
                 logger.warning("Цена не найдена")  # НУЖНО ДОБАВИТЬ
                 return "нет"
-            price_clean = re.sub(r'[^\d.,]', '', price).strip()
+            price_clean = re.sub(r"[^\d.,]", "", price).strip()
             result = price_clean if price_clean else price
             logger.info(f"Найдена цена: {result}")  # НУЖНО ДОБАВИТЬ
             return result
@@ -174,9 +176,10 @@ class Parser:
             if not description:
                 logger.warning("Описание не найдено")  # НУЖНО ДОБАВИТЬ
                 return "нет"
-            description = re.sub(r'\s+', ' ', description).strip()
+            description = re.sub(r"\s+", " ", description).strip()
             logger.info(
-                f"Найдено описание: {description[:50]}{'...' if len(description) > 50 else ''}")  # НУЖНО ДОБАВИТЬ
+                f"Найдено описание: {description[:50]}{'...' if len(description) > 50 else ''}"
+            )  # НУЖНО ДОБАВИТЬ
             return description
         except Exception as e:
             logger.warning(f"Не удалось получить описание: {e}")
@@ -184,8 +187,8 @@ class Parser:
 
     def _get_rating_from_review_page(self, product_url: str) -> str:
         try:
-            product_slug = product_url.split('/')[-1]
-            product_id = product_slug.split('-')[0]
+            product_slug = product_url.split("/")[-1]
+            product_id = product_slug.split("-")[0]
             review_url = f"https://goldapple.ru/review/product/{product_id}"
             logger.debug(f"Переход на страницу отзывов: {review_url}")
             self.driver.get(review_url)
@@ -194,7 +197,7 @@ class Parser:
                 try:
                     element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     rating = element.text.strip()
-                    if rating and re.match(r'^\d+(\.\d+)?$', rating):
+                    if rating and re.match(r"^\d+(\.\d+)?$", rating):
                         # преобразуем в число для проверки
                         rating_float = float(rating)
                         # проверка что рейтинг не 0.0
@@ -222,8 +225,7 @@ class Parser:
             # Кликаем по вкладке "Применение"
             try:
                 apply_tab = self.driver.find_element(
-                    By.XPATH,
-                    "//button[contains(@class, 'ga-tabs-tab')]//div[contains(text(), 'Применение')]"
+                    By.XPATH, "//button[contains(@class, 'ga-tabs-tab')]//div[contains(text(), 'Применение')]"
                 )
                 apply_tab.click()
                 time.sleep(2)
@@ -237,12 +239,13 @@ class Parser:
 
             # Ищем паттерн: text="Применение" и следующий за ним wysiwyg
             import re
+
             pattern = r'text="Применение".*?<div[^>]*class="[^"]*_ga-pdp-wysiwyg[^"]*"[^>]*>(.*?)</div>'
             match = re.search(pattern, page_source, re.DOTALL)
 
             if match:
-                instructions = re.sub(r'<[^>]+>', '', match.group(1)).strip()
-                instructions = re.sub(r'\s+', ' ', instructions)
+                instructions = re.sub(r"<[^>]+>", "", match.group(1)).strip()
+                instructions = re.sub(r"\s+", " ", instructions)
                 if instructions:
                     logger.info(f"Найдена инструкция: {instructions[:50]}...")
                     return instructions
@@ -264,7 +267,7 @@ class Parser:
             try:
                 additional_tab = self.driver.find_element(
                     By.XPATH,
-                    "//button[contains(@class, 'ga-tabs-tab')]//div[contains(text(), 'Дополнительная информация')]"
+                    "//button[contains(@class, 'ga-tabs-tab')]//div[contains(text(), 'Дополнительная информация')]",
                 )
                 additional_tab.click()
                 time.sleep(2)
@@ -278,7 +281,7 @@ class Parser:
             import re
 
             # Ищем паттерн: страна происхождения<br>СТРАНА
-            pattern = r'страна происхождения<br>(.*?)<br'
+            pattern = r"страна происхождения<br>(.*?)<br"
             match = re.search(pattern, page_source, re.IGNORECASE)
 
             if match:
@@ -287,7 +290,7 @@ class Parser:
                 return country
 
             # Альтернативный паттерн: страна происхождения\nСТРАНА
-            pattern2 = r'страна происхождения\s*\n\s*(.*?)\s*\n'
+            pattern2 = r"страна происхождения\s*\n\s*(.*?)\s*\n"
             match2 = re.search(pattern2, page_source, re.IGNORECASE)
 
             if match2:
@@ -342,7 +345,7 @@ class Parser:
             logger.error(f"Файл не найден: {self.input_path}")
             return products
 
-        with open(self.input_path, 'r', encoding='utf-8-sig') as csvfile:
+        with open(self.input_path, "r", encoding="utf-8-sig") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 url = row.get("Ссылка на продукт", "") or ""
@@ -357,7 +360,7 @@ class Parser:
                     rating=row.get("Рейтинг пользователей", "") or "",
                     description=row.get("Описание продукта", "") or "",
                     instructions=row.get("Инструкция по применению", "") or "",
-                    country=row.get("Страна-производитель", "") or ""
+                    country=row.get("Страна-производитель", "") or "",
                 )
                 products.append(product)
 
@@ -366,7 +369,7 @@ class Parser:
 
     def save_products_to_csv(self, products: List[Product]) -> None:
         """Сохраняет продукты обратно в CSV файл"""
-        with open(self.input_path, 'w', newline='', encoding='utf-8-sig') as csvfile:
+        with open(self.input_path, "w", newline="", encoding="utf-8-sig") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=Product.CSV_HEADERS)
             writer.writeheader()
             for product in products:

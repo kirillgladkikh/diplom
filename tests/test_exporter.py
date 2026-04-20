@@ -41,7 +41,7 @@ class TestCSVExporter:
                 rating="4.5",
                 description="Desc 1",
                 instructions="Instr 1",
-                country="Russia"
+                country="Russia",
             )
         ]
 
@@ -53,7 +53,7 @@ class TestCSVExporter:
         assert os.path.exists(full_path)
 
         # Проверяем содержимое
-        with open(full_path, 'r', encoding='utf-8-sig') as f:
+        with open(full_path, "r", encoding="utf-8-sig") as f:
             content = f.read()
             assert "Ссылка на продукт" in content
             assert "https://test.ru/1" in content
@@ -66,7 +66,7 @@ class TestCSVExporter:
         products = [
             Product(url="https://test.ru/1", name="Product 1"),
             Product(url="https://test.ru/2", name="Product 2"),
-            Product(url="https://test.ru/3", name="Product 3")
+            Product(url="https://test.ru/3", name="Product 3"),
         ]
 
         result = exporter.export(products)
@@ -76,7 +76,7 @@ class TestCSVExporter:
         assert os.path.exists(full_path)
 
         # Считаем строки (минус заголовок)
-        with open(full_path, 'r', encoding='utf-8-sig') as f:
+        with open(full_path, "r", encoding="utf-8-sig") as f:
             lines = f.readlines()
             # Заголовок + 3 продукта
             assert len(lines) == 4

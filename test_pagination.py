@@ -23,14 +23,12 @@ def test_pagination():
 
         # Ждем загрузки пагинации
         wait = WebDriverWait(driver, 10)
-        pagination = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "ul._ga-plp-pagination_1ert2_1"))
-        )
+        pagination = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "ul._ga-plp-pagination_1ert2_1")))
 
         print("\n" + "=" * 60)
         print("HTML пагинации:")
         print("=" * 60)
-        print(pagination.get_attribute('outerHTML'))
+        print(pagination.get_attribute("outerHTML"))
 
         print("\n" + "=" * 60)
         print("Текст пагинации:")
@@ -40,7 +38,7 @@ def test_pagination():
         print("\n" + "=" * 60)
         print("Найденные числа:")
         print("=" * 60)
-        numbers = re.findall(r'\d+', pagination.text)
+        numbers = re.findall(r"\d+", pagination.text)
         print(f"Все числа: {numbers}")
 
         if numbers:

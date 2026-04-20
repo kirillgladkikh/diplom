@@ -5,6 +5,7 @@ from src.product import Product
 
 class CSVExporter:
     """Экспорт данных в CSV"""
+
     def __init__(self, filename, data_dir="data"):
         self.filename = filename
         self.data_dir = data_dir
@@ -23,7 +24,7 @@ class CSVExporter:
 
         full_path = self.get_full_path()
 
-        with open(full_path, 'w', newline='', encoding='utf-8-sig') as csvfile:
+        with open(full_path, "w", newline="", encoding="utf-8-sig") as csvfile:
             # Берём заголовки из класса Product (единый источник)
             writer = csv.DictWriter(csvfile, fieldnames=Product.CSV_HEADERS)
             writer.writeheader()

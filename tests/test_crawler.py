@@ -84,6 +84,7 @@ class TestCrawler:
 
         # Просто проверяем что метод работает без ошибок
         import time
+
         start = time.time()
         crawler._random_delay(min_delay=0.1, max_delay=0.2)
         elapsed = time.time() - start
@@ -95,7 +96,7 @@ class TestCrawler:
         crawler = Crawler()
 
         # Не вызываем реальный метод, просто проверяем наличие
-        assert hasattr(crawler, 'get_products')
+        assert hasattr(crawler, "get_products")
         assert callable(crawler.get_products)
 
     def test_init_driver_returns_driver(self):
@@ -103,7 +104,7 @@ class TestCrawler:
         crawler = Crawler()
 
         # Патчим webdriver, чтобы не запускать реальный браузер
-        with patch('src.crawler.webdriver.Chrome') as mock_chrome:
+        with patch("src.crawler.webdriver.Chrome") as mock_chrome:
             mock_driver = Mock()
             mock_chrome.return_value = mock_driver
 
@@ -117,6 +118,7 @@ class TestCrawler:
         crawler = Crawler()
 
         import time
+
         start = time.time()
         crawler._random_delay(min_delay=0.05, max_delay=0.1)
         elapsed = time.time() - start
@@ -129,6 +131,7 @@ class TestCrawler:
 
         # Просто проверяем что метод работает
         import time
+
         start = time.time()
         crawler._random_delay()
         elapsed = time.time() - start
@@ -153,21 +156,21 @@ class TestCrawler:
         assert crawler._check_empty_page(1, 5) is False
         assert crawler._check_empty_page(100, 1) is False
 
-    @patch('src.crawler.logger')
+    @patch("src.crawler.logger")
     def test_save_checkpoint_handles_exception(self, mock_logger):
         """Тест: сохранение чекпоинта при ошибке записи"""
         crawler = Crawler()
         crawler.product_links = {"https://test.ru/1"}
 
         # Патчим open, чтобы вызвать исключение
-        with patch('builtins.open', side_effect=Exception("Write error")):
+        with patch("builtins.open", side_effect=Exception("Write error")):
             crawler._save_checkpoint(10)
 
             # Проверяем, что логгер вызван с предупреждением
             mock_logger.warning.assert_called_once()
 
-    @patch('src.crawler.os.path.exists')
-    @patch('src.crawler.logger')
+    @patch("src.crawler.os.path.exists")
+    @patch("src.crawler.logger")
     def test_load_checkpoint_file_not_exists(self, mock_logger, mock_exists):
         """Тест: загрузка чекпоинта когда файл не существует"""
         mock_exists.return_value = False
@@ -178,10 +181,10 @@ class TestCrawler:
         assert result == 0
         assert len(crawler.product_links) == 0
 
-    @patch('src.crawler.os.path.exists')
-    @patch('builtins.open')
-    @patch('json.load')
-    @patch('src.crawler.logger')
+    @patch("src.crawler.os.path.exists")
+    @patch("builtins.open")
+    @patch("json.load")
+    @patch("src.crawler.logger")
     def test_load_checkpoint_success(self, mock_logger, mock_json_load, mock_open, mock_exists):
         """Тест: успешная загрузка чекпоинта"""
         mock_exists.return_value = True
@@ -190,7 +193,7 @@ class TestCrawler:
         mock_json_load.return_value = {
             "last_page": 15,
             "total_links": 10,
-            "links": ["https://test.ru/1", "https://test.ru/2"]
+            "links": ["https://test.ru/1", "https://test.ru/2"],
         }
 
         crawler = Crawler()
@@ -199,10 +202,10 @@ class TestCrawler:
         assert result == 15
         assert len(crawler.product_links) == 2
 
-    @patch('src.crawler.os.path.exists')
-    @patch('builtins.open')
-    @patch('json.load')
-    @patch('src.crawler.logger')
+    @patch("src.crawler.os.path.exists")
+    @patch("builtins.open")
+    @patch("json.load")
+    @patch("src.crawler.logger")
     def test_load_checkpoint_exception(self, mock_logger, mock_json_load, mock_open, mock_exists):
         """Тест: загрузка чекпоинта с ошибкой"""
         mock_exists.return_value = True
@@ -218,8 +221,8 @@ class TestCrawler:
         """Тест: удаление чекпоинта когда файла нет"""
         crawler = Crawler()
 
-        with patch('src.crawler.os.path.exists', return_value=False):
-            with patch('src.crawler.os.remove') as mock_remove:
+        with patch("src.crawler.os.path.exists", return_value=False):
+            with patch("src.crawler.os.remove") as mock_remove:
                 crawler._clear_checkpoint()
                 mock_remove.assert_not_called()
 
@@ -227,8 +230,8 @@ class TestCrawler:
         """Тест: удаление чекпоинта когда файл есть"""
         crawler = Crawler()
 
-        with patch('src.crawler.os.path.exists', return_value=True):
-            with patch('src.crawler.os.remove') as mock_remove:
+        with patch("src.crawler.os.path.exists", return_value=True):
+            with patch("src.crawler.os.remove") as mock_remove:
                 crawler._clear_checkpoint()
                 mock_remove.assert_called_once()
 
@@ -239,9 +242,10 @@ class TestCrawler:
 
         # Мокаем driver.get чтобы вызвать исключение
         from selenium.common.exceptions import TimeoutException
+
         crawler.driver.get.side_effect = TimeoutException("Timeout")
 
-        with patch('src.crawler.logger') as mock_logger:
+        with patch("src.crawler.logger") as mock_logger:
             result = crawler._extract_links_from_page(1)
 
             assert result == 0
@@ -256,7 +260,7 @@ class TestCrawler:
         # Мокаем driver.get чтобы вызвать общее исключение
         crawler.driver.get.side_effect = Exception("General error")
 
-        with patch('src.crawler.logger') as mock_logger:
+        with patch("src.crawler.logger") as mock_logger:
             result = crawler._extract_links_from_page(1)
 
             assert result == 0
@@ -273,8 +277,8 @@ class TestCrawler:
         # Мокаем find_elements - пустой список
         crawler.driver.find_elements.return_value = []
 
-        with patch('src.crawler.WebDriverWait'):
-            with patch('src.crawler.logger'):
+        with patch("src.crawler.WebDriverWait"):
+            with patch("src.crawler.logger"):
                 result = crawler._extract_links_from_page(1)
 
                 assert result == 0
@@ -294,8 +298,8 @@ class TestCrawler:
 
         crawler.driver.find_elements.return_value = [mock_link1, mock_link2]
 
-        with patch('src.crawler.WebDriverWait'):
-            with patch('src.crawler.logger'):
+        with patch("src.crawler.WebDriverWait"):
+            with patch("src.crawler.logger"):
                 result = crawler._extract_links_from_page(1)
 
                 assert result == 2
@@ -319,8 +323,8 @@ class TestCrawler:
 
         crawler.driver.find_elements.return_value = [mock_link1, mock_link2, mock_link3]
 
-        with patch('src.crawler.WebDriverWait'):
-            with patch('src.crawler.logger'):
+        with patch("src.crawler.WebDriverWait"):
+            with patch("src.crawler.logger"):
                 result = crawler._extract_links_from_page(1)
 
                 assert result == 1
@@ -332,8 +336,8 @@ class TestCrawler:
         crawler.driver = Mock()
         crawler.product_links = {"https://test.ru/1", "https://test.ru/2"}
 
-        with patch('src.crawler.logger'):
-            with patch.object(crawler, '_extract_links_from_page', side_effect=KeyboardInterrupt):
+        with patch("src.crawler.logger"):
+            with patch.object(crawler, "_extract_links_from_page", side_effect=KeyboardInterrupt):
                 result = crawler.collect_all_links(resume=False)
 
                 # Должен вернуть список продуктов из уже собранных ссылок
@@ -345,10 +349,10 @@ class TestCrawler:
         crawler.driver = Mock()
 
         # Мокаем _extract_links_from_page
-        with patch.object(crawler, '_extract_links_from_page', return_value=5):
-            with patch('src.crawler.logger'):
-                with patch('src.crawler.TEST_MODE', True):
-                    with patch('src.crawler.TEST_MODE_PAGES', 3):
+        with patch.object(crawler, "_extract_links_from_page", return_value=5):
+            with patch("src.crawler.logger"):
+                with patch("src.crawler.TEST_MODE", True):
+                    with patch("src.crawler.TEST_MODE_PAGES", 3):
                         result = crawler.collect_all_links(resume=False)
 
                         # Должен быть вызван для страниц 1,2,3
@@ -362,9 +366,9 @@ class TestCrawler:
         # Первые 2 страницы с ссылками, потом пустые
         calls = [5, 5, 0, 0, 0]
 
-        with patch.object(crawler, '_extract_links_from_page', side_effect=calls):
-            with patch('src.crawler.logger'):
-                with patch('src.crawler.MAX_EMPTY_PAGES', 3):
+        with patch.object(crawler, "_extract_links_from_page", side_effect=calls):
+            with patch("src.crawler.logger"):
+                with patch("src.crawler.MAX_EMPTY_PAGES", 3):
                     result = crawler.collect_all_links(resume=False)
 
                     # Должен остановиться после 3 пустых страниц

@@ -13,22 +13,31 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
 from src.config import (
-    BASE_URL, TEST_MODE, TEST_MODE_PAGES, DEFAULT_MAX_PAGES,
-    REQUEST_DELAY_MIN, REQUEST_DELAY_MAX,
-    PAGE_DELAY_MIN, PAGE_DELAY_MAX,
-    RETRY_DELAY_MIN, RETRY_DELAY_MAX,
+    BASE_URL,
+    TEST_MODE,
+    TEST_MODE_PAGES,
+    DEFAULT_MAX_PAGES,
+    REQUEST_DELAY_MIN,
+    REQUEST_DELAY_MAX,
+    PAGE_DELAY_MIN,
+    PAGE_DELAY_MAX,
+    RETRY_DELAY_MIN,
+    RETRY_DELAY_MAX,
     RETRY_COUNT,
     SELECTORS_PLP,
-    CRAWLER_CHECKPOINT_FILE, CRAWLER_SAVE_EVERY_PAGES, MAX_EMPTY_PAGES
+    CRAWLER_CHECKPOINT_FILE,
+    CRAWLER_SAVE_EVERY_PAGES,
+    MAX_EMPTY_PAGES,
 )
 from src.product import Product
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
 class Crawler:
     """Обход страниц и сбор ссылок на продукты"""
+
     def __init__(self):
         self.base_url = BASE_URL
         self.product_links = set()
@@ -56,10 +65,10 @@ class Crawler:
         checkpoint = {
             "last_page": current_page,  # ← номер страницы, которую ТОЛЬКО ЧТО ОБРАБОТАЛИ
             "total_links": len(self.product_links),
-            "links": list(self.product_links)
+            "links": list(self.product_links),
         }
         try:
-            with open(CRAWLER_CHECKPOINT_FILE, 'w', encoding='utf-8') as f:
+            with open(CRAWLER_CHECKPOINT_FILE, "w", encoding="utf-8") as f:
                 json.dump(checkpoint, f, ensure_ascii=False, indent=2)
             logger.info(f"Чекпоинт: страница {current_page}, собрано {len(self.product_links)} ссылок")
         except Exception as e:
@@ -71,14 +80,15 @@ class Crawler:
             return 0
 
         try:
-            with open(CRAWLER_CHECKPOINT_FILE, 'r', encoding='utf-8') as f:
+            with open(CRAWLER_CHECKPOINT_FILE, "r", encoding="utf-8") as f:
                 checkpoint = json.load(f)
 
             self.product_links = set(checkpoint.get("links", []))
             last_page = checkpoint.get("last_page", 0)
 
             logger.info(
-                f"Загружен чекпоинт: обработана страница {last_page}, собрано {len(self.product_links)} ссылок")
+                f"Загружен чекпоинт: обработана страница {last_page}, собрано {len(self.product_links)} ссылок"
+            )
             return last_page  # ← возвращаем номер ОБРАБОТАННОЙ страницы
         except Exception as e:
             logger.warning(f"Не удалось загрузить чекпоинт: {e}")
@@ -113,9 +123,7 @@ class Crawler:
                 self._random_delay()
 
                 # Явное ожидание загрузки тела страницы
-                WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "body"))
-                )
+                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
                 page_links = []
                 pattern = SELECTORS_PLP["product_link_pattern"]
@@ -124,11 +132,11 @@ class Crawler:
 
                 for link in all_links:
                     try:
-                        href = link.get_attribute('href')
+                        href = link.get_attribute("href")
                         if not href:
                             continue
 
-                        clean_href = href.split('?')[0]
+                        clean_href = href.split("?")[0]
 
                         if re.search(pattern, clean_href):
                             if clean_href not in self.product_links:
@@ -187,7 +195,8 @@ class Crawler:
                         return products
                     start_page = last_processed_page + 1
                     logger.info(
-                        f"Возобновляем со страницы {start_page} (последняя обработанная: {last_processed_page})")
+                        f"Возобновляем со страницы {start_page} (последняя обработанная: {last_processed_page})"
+                    )
 
             logger.info(f"Начинаем сбор со страницы {start_page} из {total_pages}")
 
@@ -238,7 +247,7 @@ class Crawler:
 
         except Exception as e:
             logger.error(f"Критическая ошибка: {e}")
-            if hasattr(self, 'last_processed_page') and self.last_processed_page > 0:
+            if hasattr(self, "last_processed_page") and self.last_processed_page > 0:
                 self._save_checkpoint(self.last_processed_page)
             for link in self.product_links:
                 products.append(Product(url=link))
@@ -267,7 +276,7 @@ def check_and_get_resume_status():
     if os.path.exists(temp_file) or os.path.exists(checkpoint_file):
         logger.warning("Обнаружен незавершённый краулинг!")
         response = input("Возобновить с последнего сохранённого места? (y/n): ").lower()
-        resume = response == 'y'
+        resume = response == "y"
 
         if not resume:
             # Удаляем временные файлы

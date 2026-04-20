@@ -1,5 +1,6 @@
 class Product:
     """Модель продукта - единый источник истины для структуры данных"""
+
     # Заголовки итогового CSV-файла (определены здесь, потому что это структура данных)
     CSV_HEADERS = [
         "Ссылка на продукт",
@@ -8,11 +9,12 @@ class Product:
         "Рейтинг пользователей",
         "Описание продукта",
         "Инструкция по применению",
-        "Страна-производитель"
+        "Страна-производитель",
     ]
 
-    def __init__(self, url=None, name=None, price=None, rating=None,
-                 description=None, instructions=None, country=None):
+    def __init__(
+        self, url=None, name=None, price=None, rating=None, description=None, instructions=None, country=None
+    ):
         self.url = url
         self.name = name
         self.price = price
@@ -30,5 +32,5 @@ class Product:
             "Рейтинг пользователей": self.rating or "нет",
             "Описание продукта": self.description or "нет",
             "Инструкция по применению": self.instructions or "нет",
-            "Страна-производитель": self.country or "нет"
+            "Страна-производитель": self.country or "нет",
         }
